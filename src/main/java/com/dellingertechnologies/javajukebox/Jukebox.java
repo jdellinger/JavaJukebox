@@ -40,6 +40,7 @@ public class Jukebox implements BasicPlayerListener {
 	private static Jukebox jukebox;
 	private JukeboxDao dao;
 	private String jukeboxHome;
+	private double lastVolume;
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmd = null;
@@ -111,6 +112,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void powerOn() throws BasicPlayerException {
 		playNextTrack();
 		player.setGain(1.0);
+		this.lastVolume = 1.0;
 	}
 
 	public void powerOff() throws Exception {
@@ -142,7 +144,6 @@ public class Jukebox implements BasicPlayerListener {
 	public void progress(int bytesread, long microseconds, byte[] pcmdata,
 			Map properties) {
 		this.currentProgress = properties;
-		// display("progress : "+properties.toString());
 	}
 
 	public void setController(BasicController controller) {
@@ -217,9 +218,10 @@ public class Jukebox implements BasicPlayerListener {
 			player.stop();
 			player.open(finder.nextTrack());
 			player.play();
+			player.setGain(lastVolume);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return false;
+			return playNextTrack();
 		}
 		return true;
 	}
@@ -248,5 +250,10 @@ public class Jukebox implements BasicPlayerListener {
 
 	public BasicPlayerEvent getCurrentState() {
 		return currentState;
+	}
+
+	public void setVolume(double volume) throws BasicPlayerException {
+		player.setGain(volume);
+		this.lastVolume=volume;
 	}
 }

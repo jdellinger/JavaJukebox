@@ -84,7 +84,7 @@ public class JukeboxResource {
 	@Path("volume")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject updateVolume(@FormParam("volume") double volume) throws Exception{
-		Jukebox.getInstance().getPlayer().setGain(volume);
+		Jukebox.getInstance().setVolume(volume);
 		return volume();
 	}
 }
