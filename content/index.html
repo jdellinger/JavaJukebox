@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Java Jukebox</title>
+		<link type="text/css" href="css/smoothness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />	
+		<script type="text/javascript" src="js/jquery-1.6.1.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+
+				$('#play').click(function(){
+					$.ajax({
+						  url: "/service/jukebox/resume",
+						  success: function(){
+						  	retrieveStatus();
+						  }
+						});
+					return false;
+				});
+
+				$('#pause').click(function(){
+					$.ajax({
+						  url: "/service/jukebox/pause",
+						  success: function(){
+						  	retrieveStatus();
+						  }
+						});
+					return false;
+				});
+
+				$('#skip').click(function(){
+					$.ajax({
+						  url: "/service/jukebox/skip",
+						  success: function(){
+						  	retrieveStatus();
+						  }
+						});
+					return false;
+				});
+
+				$('#restart').click(function(){
+					$.ajax({
+						  url: "/service/jukebox/restart",
+						  success: function(){
+						  	retrieveStatus();
+						  }
+						});
+					return false;
+				});
+
+				// Slider
+				$('#volumeSlider').slider({
+					range: false,
+					max: 100,
+					value: 100,
+					change: function(event, ui) {
+						updateVolume(ui.value); 
+					}
+				});
+
+				$("#progressbar").progressbar();
+				
+				retrieveStatus();
+				retrieveVolume();
+
+				updateAndScheduleStatus();
+			});
+
+			function updateAndScheduleStatus(){
+				retrieveStatus();
+				setTimeout(updateAndScheduleStatus, 6000);
+			}
+			
+			function retrieveStatus(){
+				$.ajax({
+					  url: "/service/jukebox/status",
+					  success: function(data){
+						updateFromStatus(data);
+					  }
+					});
+			}
+
+			function retrieveVolume(){
+				$.ajax({
+					  url: "/service/jukebox/volume",
+					  success: function(data){
+						$('#volumeSlider').slider("value", data.volume*100);
+					  }
+					});
+			}
+
+			function updateFromStatus(data){
+				if(data.playing){
+				    $('#play').hide();
+				    $('#pause').show();
+				}else {
+				    $('#play').show();
+				    $('#pause').hide();
+				}
+
+				var pct = (data.progress['mp3.frame']/data.current['mp3.length.frames']) * 100;
+				$('#progressbar').progressbar('value', pct);
+				
+				updateNowPlaying(data.current);
+			}
+
+			function updateNowPlaying(current){
+				$('#nowplaying').empty();
+				var trackElement = $('<div/>', {'class': 'title', text: 'Title: '+current.title})
+					.append($('<div/>', {'class': 'album', text: 'Album: '+current.album}))
+					.append($('<div/>', {'class': 'artist', text: 'Artist: '+current.author}));
+				trackElement.appendTo('#nowplaying');
+			}
+			
+			function updateVolume(volume){
+				$.ajax({
+					  url: "/service/jukebox/volume",
+					  type: 'post',
+					  data: 'volume='+volume/100,
+					  success: function(data){
+						$('#volume').value=volume;
+					  }
+					});
+			}
+		</script>
+		<style type="text/css">
+			/*demo page css*/
+			body{ font: 62.5% "Trebuchet MS", sans-serif; margin: 50px;}
+			#dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
+			#dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
+			ul#icons {margin: 0; padding: 0;}
+			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
+			ul#icons span.ui-icon {float: left; margin: 0 4px;}
+			
+			#volumeSlider {width: 100px;}
+			#progressbar {width: 400px;}
+		</style>	
+	</head>
+	<body>
+	<h1>Java Jukebox</h1>
+	
+	<div id="controls">
+	<ul id="icons" class="ui-widget ui-helper-clearfix">
+		<li id="restart" class="ui-state-default ui-corner-all" title="Restart"><span class="ui-icon ui-icon-seek-first"></span></li>
+		<li id="play" class="ui-state-default ui-corner-all" title="Play"><span class="ui-icon ui-icon-play"></span></li>
+		<li id="pause" class="ui-state-default ui-corner-all" title="Pause"><span class="ui-icon ui-icon-pause"></span></li>
+		<li id="skip" class="ui-state-default ui-corner-all" title="Skip"><span class="ui-icon ui-icon-seek-end"></span></li>
+		<!--
+		<li class="ui-state-default ui-corner-all" title=".ui-icon-seek-next"><span class="ui-icon ui-icon-seek-next"></span></li>
+		<li class="ui-state-default ui-corner-all" title=".ui-icon-seek-prev"><span class="ui-icon ui-icon-seek-prev"></span></li>
+		-->
+	</ul>
+	<div>Volume: <div id="volumeSlider"></div></div>
+	
+	<h2>Now Playing</h2>
+	<div id="nowplaying"></div>
+	<div id="progressbar"></div>
+	
+	</body>
+</html>
+
+
