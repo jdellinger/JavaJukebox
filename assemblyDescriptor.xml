@@ -1,0 +1,26 @@
+<assembly>
+	<id>assembly</id>
+	<formats>
+		<format>zip</format>
+	</formats>
+	<fileSets>
+		<fileSet>
+			<directory>src/main/scripts</directory>
+			<outputDirectory>bin</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>src/main/resources</directory>
+			<outputDirectory>conf</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>content</directory>
+			<outputDirectory>content</outputDirectory>
+		</fileSet>
+	</fileSets>
+	<dependencySets>
+		<dependencySet>
+			<scope>runtime</scope>
+			<outputDirectory>lib</outputDirectory>
+		</dependencySet>
+	</dependencySets>
+</assembly>
