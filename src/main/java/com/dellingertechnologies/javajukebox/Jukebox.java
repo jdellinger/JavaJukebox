@@ -1,6 +1,7 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Map;
 
 import javazoom.jlgui.basicplayer.BasicController;
@@ -41,6 +42,7 @@ public class Jukebox implements BasicPlayerListener {
 	private JukeboxDao dao;
 	private String jukeboxHome;
 	private double lastVolume;
+	private File currentTrack;
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmd = null;
@@ -216,7 +218,9 @@ public class Jukebox implements BasicPlayerListener {
 	public boolean playNextTrack() {
 		try {
 			player.stop();
-			player.open(finder.nextTrack());
+			File track = finder.nextTrack();
+			player.open(track);
+			currentTrack = track;
 			player.play();
 			player.setGain(lastVolume);
 		} catch (Exception e) {
@@ -255,5 +259,13 @@ public class Jukebox implements BasicPlayerListener {
 	public void setVolume(double volume) throws BasicPlayerException {
 		player.setGain(volume);
 		this.lastVolume=volume;
+	}
+
+	public File getCurrentFile() {
+		return currentTrack;
+	}
+
+	public File getDirectory() {
+		return directory;
 	}
 }

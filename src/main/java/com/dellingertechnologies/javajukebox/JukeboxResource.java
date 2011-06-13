@@ -1,5 +1,8 @@
 package com.dellingertechnologies.javajukebox;
 
+import java.io.File;
+import java.text.DecimalFormat;
+
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -7,7 +10,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang.math.NumberUtils;
 import org.codehaus.jettison.json.JSONObject;
 
 @Path("/jukebox")
@@ -21,6 +23,9 @@ public class JukeboxResource {
 		JSONObject response = new JSONObject();
 		response.put("time", System.currentTimeMillis());
 		response.put("playing", jukebox.isPlaying());
+		String relativePath = jukebox.getCurrentFile().getCanonicalPath();
+		String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
+		response.put("file", relativePath.replace(directoryPath, ""));
 		response.put("status", jukebox.getCurrentState().toString());
 		response.put("current", jukebox.getCurrentFileProperties());
 		response.put("progress", jukebox.getCurrentProgress());
@@ -56,10 +61,10 @@ public class JukeboxResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject volume() throws Exception{
 		JSONObject response = new JSONObject();
-		response.append("volume", Jukebox.getInstance().getVolume());
-		response.append("gain", Jukebox.getInstance().getPlayer().getGainValue());
-		response.append("maxgain", Jukebox.getInstance().getPlayer().getMaximumGain());
-		response.append("mingain", Jukebox.getInstance().getPlayer().getMinimumGain());
+		response.put("volume", Jukebox.getInstance().getVolume());
+		response.put("gain", Jukebox.getInstance().getPlayer().getGainValue());
+		response.put("maxgain", Jukebox.getInstance().getPlayer().getMaximumGain());
+		response.put("mingain", Jukebox.getInstance().getPlayer().getMinimumGain());
 		return response;
 	}
 	
