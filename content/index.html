@@ -102,15 +102,24 @@
 				var pct = (data.progress['mp3.frame']/data.current['mp3.length.frames']) * 100;
 				$('#progressbar').progressbar('value', pct);
 				
-				updateNowPlaying(data.current);
+				updateNowPlaying(data.current, data.file);
 			}
 
-			function updateNowPlaying(current){
+			function updateNowPlaying(current, file){
 				$('#nowplaying').empty();
-				var trackElement = $('<div/>', {'class': 'title', text: 'Title: '+current.title})
-					.append($('<div/>', {'class': 'album', text: 'Album: '+current.album}))
-					.append($('<div/>', {'class': 'artist', text: 'Artist: '+current.author}));
+				var trackElement = $('<div/>', {'class': 'title', text: 'Title: '+trimToEmpty(current.title)})
+					.append($('<div/>', {'class': 'album', text: 'Album: '+trimToEmpty(current.album)}))
+					.append($('<div/>', {'class': 'artist', text: 'Artist: '+trimToEmpty(current.author)}))
+					.append($('<div/>', {'class': 'file', text: 'File: '+trimToEmpty(file)}));
 				trackElement.appendTo('#nowplaying');
+			}
+
+			function trimToEmpty(s){
+				if(s){
+					return $.trim(s);
+				}else{
+					return '';
+				}
 			}
 			
 			function updateVolume(volume){

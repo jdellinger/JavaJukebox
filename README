@@ -1,1 +1,17 @@
 Java Jukebox - Java based player for mp3 library
+
+This is a standalone music player intended for use in shared work environments, but works just as well as a personal player as well.
+
+This player uses the BasicPlayer API from JavaZoom. (http://www.javazoom.net/jlgui/api.html). The java process lauches an embedded Jetty server to provide a web interface and webservice endpoints. There is a companion Android application (JavaJukeboxApp) that interfaces with the process to provide remote control features via mobile device.
+
+This project is built and packaged using Maven 2.
+Run "mvn clean package" from the root directory to build and package the assembly zip file.
+Expand the zip file to a location of your choice.
+Run the appropriate script from the bin directory to start the app
+
+Example:
+./jukebox.sh -p <port> -d <directory>
+where <port> is the web interface port
+  and <directory> is the root path of where your mp3 files are stored.
+  
+This has been tested using Java6 on Windows XP and Mac OS X Snow Leopard.
