@@ -114,6 +114,11 @@
 			<artifactId>vorbisspi</artifactId>
 			<version>1.0.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.ddlutils</groupId>
+			<artifactId>ddlutils</artifactId>
+			<version>1.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

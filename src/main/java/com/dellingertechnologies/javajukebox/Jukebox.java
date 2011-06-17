@@ -36,7 +36,7 @@ public class Jukebox implements BasicPlayerListener {
 	private boolean playing = false;
 
 	private static int DEFAULT_PORT = 9999;
-	private static String DEFAULT_DIRECTORY = "music";
+	private static String DEFAULT_DIRECTORY = "/music";
 	
 	private static Jukebox jukebox;
 	private JukeboxDao dao;
@@ -56,9 +56,9 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	private void initialize(CommandLine cmd) throws Exception {
-		this.port = cmd.hasOption('p') ? NumberUtils.toInt(cmd.getOptionValue('p')) : DEFAULT_PORT;
-		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(DEFAULT_DIRECTORY);
 		this.jukeboxHome = System.getProperty("JUKEBOX_HOME", ".");
+		this.port = cmd.hasOption('p') ? NumberUtils.toInt(cmd.getOptionValue('p')) : DEFAULT_PORT;
+		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(jukeboxHome + DEFAULT_DIRECTORY);
 		System.out.println("directory: "+directory);
 
 		initializeDatabase();
@@ -109,6 +109,9 @@ public class Jukebox implements BasicPlayerListener {
 
 	private void initializeDatabase() throws Exception {
 		dao = new JukeboxDao(jukeboxHome+"/db");
+		//if no tracks
+		//then run initial load
+		//else setup background thread to scan/refresh
 	}
 
 	public void powerOn() throws BasicPlayerException {
@@ -119,7 +122,7 @@ public class Jukebox implements BasicPlayerListener {
 
 	public void powerOff() throws Exception {
 		player.stop();
-		dao.cleanup();
+		dao.shutdown();
 		server.stop();
 	}
 

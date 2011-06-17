@@ -1,5 +1,5 @@
 
-set "PRGDIR=%cd%"
+set "PRGDIR=%~dp0"
 set "JUKEBOX_HOME=%PRGDIR%\.."
 
 set "JAVA_OPTS=-DJUKEBOX_HOME=%JUKEBOX_HOME%"
