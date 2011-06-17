@@ -52,7 +52,7 @@ public class JukeboxDao {
 	private DataSource createDataSource() {
 		EmbeddedDataSource ds = new EmbeddedDataSource();
 		ds.setDatabaseName(path);
-		ds.setCreateDatabase("true");
+		ds.setCreateDatabase("create");
 		return ds;
 	}
 
