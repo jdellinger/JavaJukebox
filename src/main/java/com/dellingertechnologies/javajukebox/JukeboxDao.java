@@ -68,6 +68,7 @@ public class JukeboxDao {
 		platform.createTables(database, false, false);
 	}
 
+<<<<<<< HEAD
 	public void shutdown(){
 		stopDerbyServer();
 		((EmbeddedDataSource)Locator.getDataSource()).setShutdownDatabase("shutdown");
