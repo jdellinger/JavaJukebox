@@ -2,6 +2,7 @@ package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.Collection;
 
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -10,7 +11,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.codehaus.jettison.json.JSONObject;
+
+import com.dellingertechnologies.javajukebox.model.Track;
 
 @Path("/jukebox")
 public class JukeboxResource {
@@ -23,15 +27,38 @@ public class JukeboxResource {
 		JSONObject response = new JSONObject();
 		response.put("time", System.currentTimeMillis());
 		response.put("playing", jukebox.isPlaying());
-		String relativePath = jukebox.getCurrentFile().getCanonicalPath();
+		response.put("track", toJSON(jukebox.getCurrentTrack()));
+		String relativePath = new File(jukebox.getCurrentTrack().getPath()).getCanonicalPath();
 		String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
 		response.put("file", relativePath.replace(directoryPath, ""));
-		response.put("status", jukebox.getCurrentState().toString());
-		response.put("current", jukebox.getCurrentFileProperties());
-		response.put("progress", jukebox.getCurrentProgress());
+		
+//		database.progress['mp3.frame']/data.current['mp3.length.frames']
+		long frame = (Long)jukebox.getCurrentProgress().get("mp3.frame");
+		int totalFrames = (Integer)jukebox.getCurrentFileProperties().get("mp3.length.frames");
+		double progress = totalFrames > 0 ? frame*1.0/totalFrames : 0;
+		response.put("progress", progress);
+		                                        
+//		response.put("status", jukebox.getCurrentState().toString());
+//		response.put("current", jukebox.getCurrentFileProperties());
+//		response.put("progress", jukebox.getCurrentProgress());
 		return response;
 	}
 	
+	private JSONObject toJSON(Track track) throws Exception {
+		JSONObject json = new JSONObject();
+		if(track != null){
+			json.put("title", track.getTitle());
+			json.put("album", track.getAlbum());
+			json.put("artist", track.getArtist());
+			json.put("likes", track.getLikeCount());
+			json.put("dislikes", track.getDislikeCount());
+			json.put("skips", track.getSkipCount());
+			json.put("plays", track.getPlayCount());
+			json.put("explicit", track.isExplicit());
+		}
+		return json;
+	}
+
 	@GET
 	@Path("skip")
 	@Produces(MediaType.APPLICATION_JSON)

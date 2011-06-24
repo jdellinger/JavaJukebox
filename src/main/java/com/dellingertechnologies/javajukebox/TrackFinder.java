@@ -1,9 +1,9 @@
 package com.dellingertechnologies.javajukebox;
 
-import java.io.File;
+import com.dellingertechnologies.javajukebox.model.Track;
 
 public interface TrackFinder {
 
-	public File nextTrack();
+	public Track nextTrack();
 	
 }

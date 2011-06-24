@@ -1,8 +1,11 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayer;
@@ -21,6 +24,7 @@ import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
+import com.dellingertechnologies.javajukebox.model.Track;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 public class Jukebox implements BasicPlayerListener {
@@ -42,7 +46,8 @@ public class Jukebox implements BasicPlayerListener {
 	private JukeboxDao dao;
 	private String jukeboxHome;
 	private double lastVolume;
-	private File currentTrack;
+	private Track currentTrack;
+	private File databaseDirectory;
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmd = null;
@@ -59,6 +64,7 @@ public class Jukebox implements BasicPlayerListener {
 		this.jukeboxHome = System.getProperty("JUKEBOX_HOME", ".");
 		this.port = cmd.hasOption('p') ? NumberUtils.toInt(cmd.getOptionValue('p')) : DEFAULT_PORT;
 		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(jukeboxHome + DEFAULT_DIRECTORY);
+		this.databaseDirectory = cmd.hasOption("db") ? new File(cmd.getOptionValue("db"), "db") : new File(directory, "db");
 		System.out.println("directory: "+directory);
 
 		initializeDatabase();
@@ -70,6 +76,7 @@ public class Jukebox implements BasicPlayerListener {
 		Options options = new Options();
 		options.addOption("p", true, "Port for web server to accept requests");
 		options.addOption("d", true, "Root directory where music files are located");
+		options.addOption("db", true, "Root directory where database directory is located");
 		CommandLineParser parser = new PosixParser();
 		return parser.parse( options, args);
 	}
@@ -85,7 +92,8 @@ public class Jukebox implements BasicPlayerListener {
 	private void initializeJukebox() throws BasicPlayerException {
 		player = new BasicPlayer();
 		player.addBasicPlayerListener(this);
-		finder = new RandomFSTrackFinder(directory);
+//		finder = new RandomFSTrackFinder(directory);
+		finder = new RandomDBTrackFinder(dao);
 	}
 
 	private void initializeServer() throws Exception {
@@ -108,10 +116,17 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	private void initializeDatabase() throws Exception {
-		dao = new JukeboxDao(jukeboxHome+"/db");
-		//if no tracks
-		//then run initial load
-		//else setup background thread to scan/refresh
+		dao = new JukeboxDao(databaseDirectory);
+		if(dao.hasTracks(true)){
+			//else setup background thread to scan/refresh
+		}else{
+			System.out.println("No tracks in db...loading tracks before startup");
+			loadTracks();
+		}
+	}
+
+	private void loadTracks() {
+		new TrackScanner(directory, dao).loadTracks();
 	}
 
 	public void powerOn() throws BasicPlayerException {
@@ -221,8 +236,11 @@ public class Jukebox implements BasicPlayerListener {
 	public boolean playNextTrack() {
 		try {
 			player.stop();
-			File track = finder.nextTrack();
-			player.open(track);
+			Track track = finder.nextTrack();
+			if(track == null){
+				throw new Exception("null track returned");
+			}
+			player.open(new File(track.getPath()));
 			currentTrack = track;
 			player.play();
 			player.setGain(lastVolume);
@@ -264,7 +282,7 @@ public class Jukebox implements BasicPlayerListener {
 		this.lastVolume=volume;
 	}
 
-	public File getCurrentFile() {
+	public Track getCurrentTrack() {
 		return currentTrack;
 	}
 

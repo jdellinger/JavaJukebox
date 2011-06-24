@@ -1,4 +1,5 @@
-
+@echo off
+setlocal
 set "PRGDIR=%~dp0"
 set "JUKEBOX_HOME=%PRGDIR%\.."
 

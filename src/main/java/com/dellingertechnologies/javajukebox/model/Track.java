@@ -9,13 +9,14 @@ public class Track {
 	private String album;
 	private String artist;
 	private String path;
-	private int checksum;
+	private long checksum;
 	private int likeCount;
 	private int dislikeCount;
 	private int skipCount;
 	private int playCount;
 	private Date lastPlayed;
 	private boolean explicit;
+	private boolean enabled;
 	private User user;
 	
 	public int getId() {
@@ -48,10 +49,10 @@ public class Track {
 	public void setPath(String path) {
 		this.path = path;
 	}
-	public int getChecksum() {
+	public long getChecksum() {
 		return checksum;
 	}
-	public void setChecksum(int checksum) {
+	public void setChecksum(long checksum) {
 		this.checksum = checksum;
 	}
 	public int getLikeCount() {
@@ -95,6 +96,12 @@ public class Track {
 	}
 	public void setUser(User user) {
 		this.user = user;
+	}
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+	public boolean isEnabled() {
+		return enabled;
 	}
 	
 }

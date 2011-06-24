@@ -5,6 +5,8 @@ import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dellingertechnologies.javajukebox.model.Track;
+
 public class RandomFSTrackFinder implements TrackFinder {
 
 	File musicDirectory = null;
@@ -22,9 +24,15 @@ public class RandomFSTrackFinder implements TrackFinder {
 		loadFiles(files, musicDirectory);
 	}
 	
-	public File nextTrack() {
+	public Track nextTrack() {
 		int idx = (int) Math.round(Math.random()*(files.size()-1));
-		return files.get(idx);
+		File file = files.get(idx);
+		Track track = null;
+		if(file != null){
+			track = new Track();
+			track.setPath(file.getAbsolutePath());
+		}
+		return track;
 	}
 
 	private void loadFiles(List<File> files, File parent) {

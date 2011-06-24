@@ -54,6 +54,16 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.derby</groupId>
+			<artifactId>derbynet</artifactId>
+			<version>10.8.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.derby</groupId>
+			<artifactId>derbyclient</artifactId>
+			<version>10.8.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.derby</groupId>
 			<artifactId>derbytools</artifactId>
 			<version>10.8.1.2</version>
 		</dependency>
@@ -73,6 +83,12 @@
 			<version>1.1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>mp3agic</groupId>
+			<artifactId>mp3agic</artifactId>
+			<version>0.6</version>
+		</dependency>
+		
 		<!-- BasicPlayer dependencies -->
 		<dependency>
 			<groupId>jlgui</groupId>
@@ -118,6 +134,21 @@
 			<groupId>org.apache.ddlutils</groupId>
 			<artifactId>ddlutils</artifactId>
 			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-core</artifactId>
+			<version>3.0.5.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>3.0.5.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-jdbc</artifactId>
+			<version>3.0.5.RELEASE</version>
 		</dependency>
 	</dependencies>
 
