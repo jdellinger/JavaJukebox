@@ -62,7 +62,6 @@
 				$("#progressbar").progressbar();
 				
 				retrieveStatus();
-				retrieveVolume();
 
 				updateAndScheduleStatus();
 			});
@@ -101,6 +100,8 @@
 
 				var pct = data.progress * 100;
 				$('#progressbar').progressbar('value', pct);
+
+				$('#volumeSlider').slider("value", data.volume*100);
 				
 				updateNowPlaying(data.track, data.file);
 			}

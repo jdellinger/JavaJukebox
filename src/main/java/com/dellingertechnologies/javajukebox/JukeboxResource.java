@@ -31,16 +31,12 @@ public class JukeboxResource {
 		String relativePath = new File(jukebox.getCurrentTrack().getPath()).getCanonicalPath();
 		String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
 		response.put("file", relativePath.replace(directoryPath, ""));
+		response.put("volume", Jukebox.getInstance().getVolume());
 		
-//		database.progress['mp3.frame']/data.current['mp3.length.frames']
 		long frame = (Long)jukebox.getCurrentProgress().get("mp3.frame");
 		int totalFrames = (Integer)jukebox.getCurrentFileProperties().get("mp3.length.frames");
 		double progress = totalFrames > 0 ? frame*1.0/totalFrames : 0;
 		response.put("progress", progress);
-		                                        
-//		response.put("status", jukebox.getCurrentState().toString());
-//		response.put("current", jukebox.getCurrentFileProperties());
-//		response.put("progress", jukebox.getCurrentProgress());
 		return response;
 	}
 	
