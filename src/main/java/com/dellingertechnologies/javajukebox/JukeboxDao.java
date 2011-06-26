@@ -99,13 +99,71 @@ public class JukeboxDao {
 			id = getTemplate().queryForInt("select id from tracks where checksum = ?", track.getChecksum());
 		}catch(DataAccessException dae){}
 		if(id > 0){
-			getTemplate().update("update tracks set title = ?, album = ?, artist = ?, path = ? where id = ?",
-					new Object[]{track.getTitle(), track.getAlbum(), track.getArtist(), track.getPath(), id},
-					new int[]{Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.NUMERIC});
+			String updateSql = "update tracks set title = ?, album = ?, artist = ?, path = ?, checksum = ?, likes = ?, dislikes = ?, plays = ?, skips = ?, lastplayed = ?, explicit = ?, enabled = ? where id = ?";
+			getTemplate().update(updateSql,
+					new Object[]{
+						track.getTitle(),
+						track.getAlbum(),
+						track.getArtist(),
+						track.getPath(),
+						track.getChecksum(),
+						track.getLikeCount(),
+						track.getDislikeCount(),
+						track.getPlayCount(),
+						track.getSkipCount(),
+						track.getLastPlayed(),
+						track.isExplicit(),
+						track.isEnabled(),
+						id
+					},
+					new int[]{
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.TIMESTAMP,
+						Types.BOOLEAN,
+						Types.BOOLEAN,
+						Types.NUMERIC
+					}
+			);
 		}else{
-			getTemplate().update("insert into tracks (title, album, artist, path, checksum) values (?, ?, ?, ?, ?)",
-					new Object[]{track.getTitle(), track.getAlbum(), track.getArtist(), track.getPath(), track.getChecksum()},
-					new int[]{Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.NUMERIC});
+			String insertSql = "insert into tracks (title, album, artist, path, checksum, likes, dislikes, plays, skips, lastplayed, explicit, enabled) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			getTemplate().update(insertSql,
+					new Object[]{
+						track.getTitle(),
+						track.getAlbum(),
+						track.getArtist(),
+						track.getPath(),
+						track.getChecksum(),
+						track.getLikeCount(),
+						track.getDislikeCount(),
+						track.getPlayCount(),
+						track.getSkipCount(),
+						track.getLastPlayed(),
+						track.isExplicit(),
+						track.isEnabled()
+					},
+					new int[]{
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.NUMERIC,
+						Types.TIMESTAMP,
+						Types.BOOLEAN,
+						Types.BOOLEAN
+					}
+			);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -233,6 +234,11 @@ public class Jukebox implements BasicPlayerListener {
 		}
 	}
 
+	public boolean skipTrack() {
+		currentTrack.incrementSkipCount();
+		dao.addOrUpdateTrack(currentTrack);
+		return playNextTrack();
+	}
 	public boolean playNextTrack() {
 		try {
 			player.stop();
@@ -244,6 +250,9 @@ public class Jukebox implements BasicPlayerListener {
 			currentTrack = track;
 			player.play();
 			player.setGain(lastVolume);
+			currentTrack.incrementPlayCount();
+			currentTrack.setLastPlayed(new Date());
+			dao.addOrUpdateTrack(currentTrack);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return playNextTrack();
@@ -288,5 +297,20 @@ public class Jukebox implements BasicPlayerListener {
 
 	public File getDirectory() {
 		return directory;
+	}
+	
+	public void likeCurrentTrack(){
+		currentTrack.incrementLikeCount();
+		dao.addOrUpdateTrack(currentTrack);
+	}
+
+	public void dislikeCurrentTrack(){
+		currentTrack.incrementDislikeCount();
+		dao.addOrUpdateTrack(currentTrack);
+	}
+
+	public void explicitTrack(boolean b) {
+		currentTrack.setExplicit(true);
+		dao.addOrUpdateTrack(currentTrack);
 	}
 }

@@ -59,7 +59,7 @@ public class JukeboxResource {
 	@Path("skip")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject skipTrack() throws Exception{
-		boolean result = Jukebox.getInstance().playNextTrack();
+		boolean result = Jukebox.getInstance().skipTrack();
 		return new JSONObject().append("result", result);
 	}
 
@@ -115,4 +115,29 @@ public class JukeboxResource {
 		Jukebox.getInstance().setVolume(volume);
 		return volume();
 	}
+
+	@GET
+	@Path("like")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject likeTrack() throws Exception{
+		Jukebox.getInstance().likeCurrentTrack();
+		return new JSONObject().append("result", true);
+	}
+
+	@GET
+	@Path("dislike")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject dislikeTrack() throws Exception{
+		Jukebox.getInstance().dislikeCurrentTrack();
+		return new JSONObject().append("result", true);
+	}
+
+	@GET
+	@Path("explicit")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject flagAsExplicitTrack() throws Exception{
+		Jukebox.getInstance().explicitTrack(true);
+		return new JSONObject().append("result", true);
+	}
+
 }

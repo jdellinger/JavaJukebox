@@ -15,9 +15,22 @@ public class Track {
 	private int skipCount;
 	private int playCount;
 	private Date lastPlayed;
-	private boolean explicit;
-	private boolean enabled;
+	private boolean explicit = false;
+	private boolean enabled = true;
 	private User user;
+	
+	public void incrementSkipCount(){
+		this.skipCount++;
+	}
+	public void incrementPlayCount(){
+		this.playCount++;
+	}
+	public void incrementLikeCount(){
+		this.likeCount++;
+	}
+	public void incrementDislikeCount(){
+		this.dislikeCount++;
+	}
 	
 	public int getId() {
 		return id;
