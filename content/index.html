@@ -89,6 +89,24 @@
 					});
 			}
 
+			function like(){
+				$.ajax({
+					  url: "/service/jukebox/like",
+					  success: function(data){
+						updateRatings(data.rating);;
+					  }
+					});
+			}
+
+			function dislike(){
+				$.ajax({
+					  url: "/service/jukebox/dislike",
+					  success: function(data){
+						updateRatings(data.rating);;
+					  }
+					});
+			}
+
 			function updateFromStatus(data){
 				if(data.playing){
 				    $('#play').hide();
@@ -104,6 +122,7 @@
 				$('#volumeSlider').slider("value", data.volume*100);
 				
 				updateNowPlaying(data.track, data.file);
+				updateRatings(data.rating);
 			}
 
 			function updateNowPlaying(track, file){
@@ -115,6 +134,21 @@
 				trackElement.appendTo('#nowplaying');
 			}
 
+			function updateRatings(rating){
+				var ratingElement;
+				if(rating == "LIKE"){
+					ratingElement = $('<span/>', {text: 'You like this!', class: 'green'});
+				}else if(rating == "DISLIKE"){
+					ratingElement = $('<span/>', {text: 'You dislike this!', class: 'red'});
+				}else{
+					ratingElement = $('<div/>', {id: 'ratinglinks', class: 'ui-widget ui-helper-clearfix'})
+						.append($('<div/>', {id: 'like', text: 'Like', click: like}))
+						.append($('<div/>', {id: 'dislike', text: 'Dislike', click: dislike}));
+				}
+				$('#ratings').empty();
+				ratingElement.appendTo('#ratings');
+			}
+			
 			function trimToEmpty(s){
 				if(s){
 					return $.trim(s);
@@ -143,8 +177,17 @@
 			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
 			ul#icons span.ui-icon {float: left; margin: 0 4px;}
 			
+			#ratings { font-weight: bold; }
+			#ratinglinks { width: 400px }
+			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
+			#like { width: 0px; padding: 8px 30px; background: #ffffff url(images/like.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#dislike { width: 15px;  padding: 8px 30px; background: #ffffff url(images/dislike.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			
 			#volumeSlider {width: 100px;}
 			#progressbar {width: 400px;}
+			
+			.red { color: #E41010 }
+			.green { color: #099612 }
 		</style>	
 	</head>
 	<body>
@@ -165,6 +208,7 @@
 	
 	<h2>Now Playing</h2>
 	<div id="nowplaying"></div>
+	<div id="ratings"></div>
 	<div id="progressbar"></div>
 	
 	</body>

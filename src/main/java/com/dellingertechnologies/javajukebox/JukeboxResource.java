@@ -4,11 +4,13 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Collection;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang.math.NumberUtils;
@@ -22,7 +24,7 @@ public class JukeboxResource {
 	@GET
 	@Path("status")
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject status() throws Exception{
+	public JSONObject status(@Context HttpServletRequest request) throws Exception{
 		Jukebox jukebox = Jukebox.getInstance();
 		JSONObject response = new JSONObject();
 		response.put("time", System.currentTimeMillis());
@@ -37,6 +39,7 @@ public class JukeboxResource {
 		int totalFrames = (Integer)jukebox.getCurrentFileProperties().get("mp3.length.frames");
 		double progress = totalFrames > 0 ? frame*1.0/totalFrames : 0;
 		response.put("progress", progress);
+		response.put("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 		return response;
 	}
 	
@@ -119,17 +122,21 @@ public class JukeboxResource {
 	@GET
 	@Path("like")
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject likeTrack() throws Exception{
-		Jukebox.getInstance().likeCurrentTrack();
-		return new JSONObject().append("result", true);
+	public JSONObject likeTrack(@Context HttpServletRequest request) throws Exception{
+		Jukebox.getInstance().likeCurrentTrack(request.getRemoteAddr());
+		return new JSONObject()
+			.append("result", true)
+			.append("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 	}
 
 	@GET
 	@Path("dislike")
 	@Produces(MediaType.APPLICATION_JSON)
-	public JSONObject dislikeTrack() throws Exception{
-		Jukebox.getInstance().dislikeCurrentTrack();
-		return new JSONObject().append("result", true);
+	public JSONObject dislikeTrack(@Context HttpServletRequest request) throws Exception{
+		Jukebox.getInstance().dislikeCurrentTrack(request.getRemoteAddr());
+		return new JSONObject()
+			.append("result", true)
+			.append("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 	}
 
 	@GET

@@ -2,11 +2,8 @@ package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
 import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayer;
@@ -49,6 +46,7 @@ public class Jukebox implements BasicPlayerListener {
 	private double lastVolume;
 	private Track currentTrack;
 	private File databaseDirectory;
+	private Map<String,String> ratingHostCache = new HashMap<String,String>();
 
 	public static void main(String[] args) throws Exception {
 		CommandLine cmd = null;
@@ -248,6 +246,7 @@ public class Jukebox implements BasicPlayerListener {
 			}
 			player.open(new File(track.getPath()));
 			currentTrack = track;
+			clearRatingCache();
 			player.play();
 			player.setGain(lastVolume);
 			currentTrack.incrementPlayCount();
@@ -258,6 +257,10 @@ public class Jukebox implements BasicPlayerListener {
 			return playNextTrack();
 		}
 		return true;
+	}
+
+	private void clearRatingCache() {
+		ratingHostCache.clear();
 	}
 
 	private void display(Object obj) {
@@ -299,18 +302,40 @@ public class Jukebox implements BasicPlayerListener {
 		return directory;
 	}
 	
-	public void likeCurrentTrack(){
-		currentTrack.incrementLikeCount();
-		dao.addOrUpdateTrack(currentTrack);
+	public void likeCurrentTrack(String remoteAddress){
+		if(canAddRating(remoteAddress)){
+			addToRatingCache(remoteAddress, "LIKE");
+			currentTrack.incrementLikeCount();
+			dao.addOrUpdateTrack(currentTrack);
+		}
 	}
 
-	public void dislikeCurrentTrack(){
-		currentTrack.incrementDislikeCount();
-		dao.addOrUpdateTrack(currentTrack);
+	private void addToRatingCache(String remoteAddress, String rating) {
+		ratingHostCache.put(remoteAddress, rating);
+	}
+
+	private boolean canAddRating(String remoteAddress) {
+		if(remoteAddress == null){
+			return false;
+		}else{
+			return !ratingHostCache.containsKey(remoteAddress);
+		}
+	}
+
+	public void dislikeCurrentTrack(String remoteAddress){
+		if(canAddRating(remoteAddress)){
+			addToRatingCache(remoteAddress, "DISLIKE");
+			currentTrack.incrementDislikeCount();
+			dao.addOrUpdateTrack(currentTrack);
+		}
 	}
 
 	public void explicitTrack(boolean b) {
 		currentTrack.setExplicit(true);
 		dao.addOrUpdateTrack(currentTrack);
+	}
+
+	public String getRating(String remoteAddress) {
+		return ratingHostCache.get(remoteAddress);
 	}
 }
