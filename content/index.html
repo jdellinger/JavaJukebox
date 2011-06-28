@@ -123,6 +123,7 @@
 				
 				updateNowPlaying(data.track, data.file);
 				updateRatings(data.rating);
+				updateExplicit(data.track.explicit);
 			}
 
 			function updateNowPlaying(track, file){
@@ -132,6 +133,18 @@
 					.append($('<div/>', {'class': 'artist', text: 'Artist: '+trimToEmpty(track.artist)}))
 					.append($('<div/>', {'class': 'file', text: 'File: '+trimToEmpty(file)}));
 				trackElement.appendTo('#nowplaying');
+			}
+
+			function updateExplicit(explicit){
+				$('#explicit').empty();
+				var explicitElement;
+				if(explicit){
+					explicitElement = $('<div/>', {id: 'explicitImage'});
+				}else{
+					explicitElement = $('<span/>')
+						.append($('<a></a>', {text: 'Explicit?', href: '#', click: markExplicit}));
+				}
+				explicitElement.appendTo('#explicit');
 			}
 
 			function updateRatings(rating){
@@ -147,6 +160,18 @@
 				}
 				$('#ratings').empty();
 				ratingElement.appendTo('#ratings');
+			}
+			
+			function markExplicit(){
+				if(confirm('Do you want to mark this track explicit?')){
+					$.ajax({
+						  url: "/service/jukebox/explicit",
+						  type: 'post',
+						  success: function(data){
+							updateExplicit(data.explicit);
+						  }
+						});
+				}
 			}
 			
 			function trimToEmpty(s){
@@ -182,6 +207,7 @@
 			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
 			#like { width: 0px; padding: 8px 35px; background: #ffffff url(images/happy_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
 			#dislike { width: 15px;  padding: 8px 35px; background: #ffffff url(images/sad_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#explicitImage { width: 56px; height: 40px;  background: #ffffff url(images/explicit.jpg) no-repeat; background-position: 3px 3px; color: #788BB6; }
 			
 			#volumeSlider {width: 100px;}
 			#progressbar {width: 400px;}
@@ -210,6 +236,7 @@
 	<div id="nowplaying"></div>
 	<div id="ratings"></div>
 	<div id="progressbar"></div>
+	<div id="explicit"></div>
 	
 	</body>
 </html>

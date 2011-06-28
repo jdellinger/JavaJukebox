@@ -7,11 +7,24 @@ This player uses the BasicPlayer API from JavaZoom. (http://www.javazoom.net/jlg
 This project is built and packaged using Maven 2.
 Run "mvn clean package" from the root directory to build and package the assembly zip file.
 Expand the zip file to a location of your choice.
-Run the appropriate script from the bin directory to start the app
+Run the appropriate script from the bin directory to start the app.
+
+Your music files will be processed and stored in a Derby database. The default location of the database files is in a directory "db" within your music directory. To specify an alternate db location, use the -db option. If a database is not present, one will be created and the music files will be processed. If a database exists with tracks loaded, no files will be processed.
 
 Example:
-./jukebox.sh -p <port> -d <directory>
+./jukebox.sh [-p <port>] [-d <directory>] [-db <db_directory>]
 where <port> is the web interface port
   and <directory> is the root path of where your mp3 files are stored.
+  and <db_directory> is the root path where the "db" directory will be created for a derby database.
   
+Defaults: port=9999, directory=JUKEBOX_HOME/music, db_directory=JUKEBOX_HOME/music
+
 This has been tested using Java6 on Windows XP and Mac OS X Snow Leopard.
+
+TODO:
+* Add upcoming tracks queue
+* Build weighting function into track selector based on likes/dislikes/skips/lastplayed
+* Add sound bite builder to create sound bites from existing tracks
+* Add sound bite injection
+* Add username based directories for segmenting music
+* Add custom playlists

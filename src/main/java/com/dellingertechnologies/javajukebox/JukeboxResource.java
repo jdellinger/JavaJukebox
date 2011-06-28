@@ -139,12 +139,14 @@ public class JukeboxResource {
 			.append("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 	}
 
-	@GET
+	@POST
 	@Path("explicit")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject flagAsExplicitTrack() throws Exception{
 		Jukebox.getInstance().explicitTrack(true);
-		return new JSONObject().append("result", true);
+		return new JSONObject()
+			.append("result", true)
+			.append("explicit", Jukebox.getInstance().getCurrentTrack().isExplicit());
 	}
 
 }
