@@ -1,8 +1,7 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
-import java.text.DecimalFormat;
-import java.util.Collection;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
@@ -10,10 +9,11 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang.math.NumberUtils;
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dellingertechnologies.javajukebox.model.Track;
@@ -30,9 +30,6 @@ public class JukeboxResource {
 		response.put("time", System.currentTimeMillis());
 		response.put("playing", jukebox.isPlaying());
 		response.put("track", toJSON(jukebox.getCurrentTrack()));
-		String relativePath = new File(jukebox.getCurrentTrack().getPath()).getCanonicalPath();
-		String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
-		response.put("file", relativePath.replace(directoryPath, ""));
 		response.put("volume", Jukebox.getInstance().getVolume());
 		
 		long frame = (Long)jukebox.getCurrentProgress().get("mp3.frame");
@@ -44,16 +41,24 @@ public class JukeboxResource {
 	}
 	
 	private JSONObject toJSON(Track track) throws Exception {
+		Jukebox jukebox = Jukebox.getInstance();
 		JSONObject json = new JSONObject();
 		if(track != null){
+			json.put("id", track.getId());
 			json.put("title", track.getTitle());
 			json.put("album", track.getAlbum());
 			json.put("artist", track.getArtist());
-			json.put("likes", track.getLikeCount());
-			json.put("dislikes", track.getDislikeCount());
-			json.put("skips", track.getSkipCount());
-			json.put("plays", track.getPlayCount());
+			json.put("likes", track.getLikes());
+			json.put("dislikes", track.getDislikes());
+			json.put("skips", track.getSkips());
+			json.put("plays", track.getPlays());
+			json.put("lastplayed", track.getLastPlayed());
 			json.put("explicit", track.isExplicit());
+
+			String relativePath = new File(track.getPath()).getCanonicalPath();
+			String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
+			json.put("file", relativePath.replace(directoryPath, ""));
+
 		}
 		return json;
 	}
@@ -63,7 +68,7 @@ public class JukeboxResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject skipTrack() throws Exception{
 		boolean result = Jukebox.getInstance().skipTrack();
-		return new JSONObject().append("result", result);
+		return new JSONObject().put("result", result);
 	}
 
 	@GET
@@ -71,7 +76,7 @@ public class JukeboxResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject pauseTrack() throws Exception{
 		boolean result = Jukebox.getInstance().pauseTrack();
-		return new JSONObject().append("result", result);
+		return new JSONObject().put("result", result);
 	}
 
 	@GET
@@ -79,7 +84,7 @@ public class JukeboxResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject resumeTrack() throws Exception{
 		boolean result = Jukebox.getInstance().resumeTrack();
-		return new JSONObject().append("result", result);
+		return new JSONObject().put("result", result);
 	}
 
 	@GET
@@ -100,7 +105,7 @@ public class JukeboxResource {
 	public JSONObject restart() throws Exception{
 		long bytes = ((Long)Jukebox.getInstance().getCurrentProgress().get("mp3.position.byte")).longValue();
 		long result = Jukebox.getInstance().getPlayer().seek(-bytes);
-		return new JSONObject().append("result", result);
+		return new JSONObject().put("result", result);
 	}
 
 	@GET
@@ -108,7 +113,7 @@ public class JukeboxResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject shutdown() throws Exception{
 		Jukebox.getInstance().powerOff();
-		return new JSONObject().append("result", true);
+		return new JSONObject().put("result", true);
 	}
 
 	@POST
@@ -125,8 +130,8 @@ public class JukeboxResource {
 	public JSONObject likeTrack(@Context HttpServletRequest request) throws Exception{
 		Jukebox.getInstance().likeCurrentTrack(request.getRemoteAddr());
 		return new JSONObject()
-			.append("result", true)
-			.append("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
+			.put("result", true)
+			.put("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 	}
 
 	@GET
@@ -135,8 +140,8 @@ public class JukeboxResource {
 	public JSONObject dislikeTrack(@Context HttpServletRequest request) throws Exception{
 		Jukebox.getInstance().dislikeCurrentTrack(request.getRemoteAddr());
 		return new JSONObject()
-			.append("result", true)
-			.append("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
+			.put("result", true)
+			.put("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 	}
 
 	@POST
@@ -145,8 +150,44 @@ public class JukeboxResource {
 	public JSONObject flagAsExplicitTrack() throws Exception{
 		Jukebox.getInstance().explicitTrack(true);
 		return new JSONObject()
-			.append("result", true)
-			.append("explicit", Jukebox.getInstance().getCurrentTrack().isExplicit());
+			.put("result", true)
+			.put("explicit", Jukebox.getInstance().getCurrentTrack().isExplicit());
+	}
+
+	@GET
+	@Path("queue/add")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject addToQueue(@QueryParam("num") int numToAdd, @QueryParam("id") int idToAdd) throws Exception{
+		boolean result = false;
+		if(idToAdd > 0){
+			Jukebox.getInstance().addTrackToQueue(idToAdd);
+			result = true;
+		}else if(numToAdd > 0){
+			int numberOfTracks = numToAdd > 0 ? numToAdd : 1;
+			Jukebox.getInstance().addToQueue(numberOfTracks);
+			result = true;
+		}
+		return new JSONObject().put("result", result);
+	}
+	
+	@GET
+	@Path("queue/remove")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject removeFromQueue(@QueryParam("id") int trackId) throws Exception{
+		Jukebox.getInstance().removeTrackFromQueue(trackId);
+		return new JSONObject().put("result", true);
+	}
+	
+	@GET
+	@Path("queue")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject getQueue() throws Exception{
+		List<Track> tracks = Jukebox.getInstance().getQueue();
+		JSONArray jsonTracks = new JSONArray();
+		for(Track track : tracks){
+			jsonTracks.put(toJSON(track));
+		}
+		return new JSONObject().put("queue", jsonTracks);
 	}
 
 }

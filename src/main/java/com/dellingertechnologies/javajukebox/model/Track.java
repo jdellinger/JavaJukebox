@@ -10,26 +10,26 @@ public class Track {
 	private String artist;
 	private String path;
 	private long checksum;
-	private int likeCount;
-	private int dislikeCount;
-	private int skipCount;
-	private int playCount;
+	private int likes;
+	private int dislikes;
+	private int skips;
+	private int plays;
 	private Date lastPlayed;
 	private boolean explicit = false;
 	private boolean enabled = true;
 	private User user;
 	
-	public void incrementSkipCount(){
-		this.skipCount++;
+	public void incrementSkips(){
+		this.skips++;
 	}
-	public void incrementPlayCount(){
-		this.playCount++;
+	public void incrementPlays(){
+		this.plays++;
 	}
-	public void incrementLikeCount(){
-		this.likeCount++;
+	public void incrementLikes(){
+		this.likes++;
 	}
-	public void incrementDislikeCount(){
-		this.dislikeCount++;
+	public void incrementDislikes(){
+		this.dislikes++;
 	}
 	
 	public int getId() {
@@ -68,29 +68,29 @@ public class Track {
 	public void setChecksum(long checksum) {
 		this.checksum = checksum;
 	}
-	public int getLikeCount() {
-		return likeCount;
+	public int getLikes() {
+		return likes;
 	}
-	public void setLikeCount(int likeCount) {
-		this.likeCount = likeCount;
+	public void setLikes(int likes) {
+		this.likes = likes;
 	}
-	public int getDislikeCount() {
-		return dislikeCount;
+	public int getDislikes() {
+		return dislikes;
 	}
-	public void setDislikeCount(int dislikeCount) {
-		this.dislikeCount = dislikeCount;
+	public void setDislikes(int dislikes) {
+		this.dislikes = dislikes;
 	}
-	public int getSkipCount() {
-		return skipCount;
+	public int getSkips() {
+		return skips;
 	}
-	public void setSkipCount(int skipCount) {
-		this.skipCount = skipCount;
+	public void setSkips(int skips) {
+		this.skips = skips;
 	}
-	public int getPlayCount() {
-		return playCount;
+	public int getPlays() {
+		return plays;
 	}
-	public void setPlayCount(int playCount) {
-		this.playCount = playCount;
+	public void setPlays(int plays) {
+		this.plays = plays;
 	}
 	public Date getLastPlayed() {
 		return lastPlayed;

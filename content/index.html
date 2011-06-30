@@ -13,7 +13,7 @@
 					$.ajax({
 						  url: "/service/jukebox/resume",
 						  success: function(){
-						  	retrieveStatus();
+						  	update();
 						  }
 						});
 					return false;
@@ -23,7 +23,7 @@
 					$.ajax({
 						  url: "/service/jukebox/pause",
 						  success: function(){
-						  	retrieveStatus();
+							update();
 						  }
 						});
 					return false;
@@ -33,7 +33,7 @@
 					$.ajax({
 						  url: "/service/jukebox/skip",
 						  success: function(){
-						  	retrieveStatus();
+							update();
 						  }
 						});
 					return false;
@@ -43,7 +43,7 @@
 					$.ajax({
 						  url: "/service/jukebox/restart",
 						  success: function(){
-						  	retrieveStatus();
+							update();
 						  }
 						});
 					return false;
@@ -61,14 +61,17 @@
 
 				$("#progressbar").progressbar();
 				
-				retrieveStatus();
-
-				updateAndScheduleStatus();
+				updateAndScheduleUpdate();
 			});
 
-			function updateAndScheduleStatus(){
+			function updateAndScheduleUpdate(){
+				update();
+				setTimeout(updateAndScheduleUpdate, 6000);
+			}
+
+			function update(){
 				retrieveStatus();
-				setTimeout(updateAndScheduleStatus, 6000);
+				updateQueue();
 			}
 			
 			function retrieveStatus(){
@@ -131,7 +134,7 @@
 				var trackElement = $('<div/>', {'class': 'title', text: 'Title: '+trimToEmpty(track.title)})
 					.append($('<div/>', {'class': 'album', text: 'Album: '+trimToEmpty(track.album)}))
 					.append($('<div/>', {'class': 'artist', text: 'Artist: '+trimToEmpty(track.artist)}))
-					.append($('<div/>', {'class': 'file', text: 'File: '+trimToEmpty(file)}));
+					.append($('<div/>', {'class': 'file', text: 'File: '+trimToEmpty(track.file)}));
 				trackElement.appendTo('#nowplaying');
 			}
 
@@ -192,6 +195,53 @@
 					  }
 					});
 			}
+
+			function addTracksToQueue(num){
+				$.ajax({
+					  url: "/service/jukebox/queue/add?num="+num,
+					  success: function(data){
+						updateQueue();
+					  }
+					});
+			}
+
+			function removeFromQueue(id){
+				$.ajax({
+					  url: "/service/jukebox/queue/remove?id="+id,
+					  success: function(data){
+						updateQueue();
+					  }
+					});
+			}
+
+			function updateQueue(){
+				$.ajax({
+					  url: "/service/jukebox/queue",
+					  success: function(data){
+						$('#comingup').empty();
+						 var tracks = [];
+
+						 $.each(data.queue, function(index, value) {
+							var title = value.title;
+							var album = value.album ? '('+ value.album +')' : '';
+							if(!title && !album && !value.artist){
+								title = 'File: ' + value.file;
+							}
+							var removeLink = "(<a href='#' onclick='removeFromQueue(" + value.id + ");return false;'>Remove</a>)";
+					    	tracks.push('<li>');
+					    	tracks.push(title + ' ' + album);
+					    	if(value.artist){
+					    		tracks.push('<br/><i>' + value.artist + '</i>');
+					    	}
+					    	tracks.push('<br/>' + removeLink + '</li>');
+						  });
+						 $('<ul/>', {
+						    'class': 'upcoming-list',
+						    html: tracks.join('')
+						 }).appendTo('#comingup');
+					  }
+					});
+			}
 		</script>
 		<style type="text/css">
 			/*demo page css*/
@@ -237,6 +287,13 @@
 	<div id="ratings"></div>
 	<div id="progressbar"></div>
 	<div id="explicit"></div>
+	
+	<h2>Coming Up</h2>
+	<div id="cominguplinks">
+		<a href="#" onclick="addTracksToQueue(1); return false;">Add Track</a> | 
+		<a href="#" onclick="addTracksToQueue(5); return false;">Add 5 Tracks</a>
+	</div>
+	<div id="comingup"></div>
 	
 	</body>
 </html>

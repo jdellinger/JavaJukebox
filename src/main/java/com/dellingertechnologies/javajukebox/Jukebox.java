@@ -3,6 +3,7 @@ package com.dellingertechnologies.javajukebox;
 import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javazoom.jlgui.basicplayer.BasicController;
@@ -92,7 +93,10 @@ public class Jukebox implements BasicPlayerListener {
 		player = new BasicPlayer();
 		player.addBasicPlayerListener(this);
 //		finder = new RandomFSTrackFinder(directory);
-		finder = new RandomDBTrackFinder(dao);
+//		finder = new RandomDBTrackFinder(dao);
+		finder = new MultiTrackFinder(
+				new QueueTrackFinder(dao),
+				new RandomDBTrackFinder(dao));
 	}
 
 	private void initializeServer() throws Exception {
@@ -233,7 +237,7 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	public boolean skipTrack() {
-		currentTrack.incrementSkipCount();
+		currentTrack.incrementSkips();
 		dao.addOrUpdateTrack(currentTrack);
 		return playNextTrack();
 	}
@@ -249,10 +253,11 @@ public class Jukebox implements BasicPlayerListener {
 			clearRatingCache();
 			player.play();
 			player.setGain(lastVolume);
-			currentTrack.incrementPlayCount();
+			currentTrack.incrementPlays();
 			currentTrack.setLastPlayed(new Date());
 			dao.addOrUpdateTrack(currentTrack);
 		} catch (Exception e) {
+			try{player.stop();}catch(Exception ex){ex.printStackTrace();}
 			e.printStackTrace();
 			return playNextTrack();
 		}
@@ -305,7 +310,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void likeCurrentTrack(String remoteAddress){
 		if(canAddRating(remoteAddress)){
 			addToRatingCache(remoteAddress, "LIKE");
-			currentTrack.incrementLikeCount();
+			currentTrack.incrementLikes();
 			dao.addOrUpdateTrack(currentTrack);
 		}
 	}
@@ -325,7 +330,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void dislikeCurrentTrack(String remoteAddress){
 		if(canAddRating(remoteAddress)){
 			addToRatingCache(remoteAddress, "DISLIKE");
-			currentTrack.incrementDislikeCount();
+			currentTrack.incrementDislikes();
 			dao.addOrUpdateTrack(currentTrack);
 		}
 	}
@@ -337,5 +342,21 @@ public class Jukebox implements BasicPlayerListener {
 
 	public String getRating(String remoteAddress) {
 		return ratingHostCache.get(remoteAddress);
+	}
+
+	public void addToQueue(int numberOfTracks) {
+		dao.addTracksToQueue(numberOfTracks);
+	}
+
+	public List<Track> getQueue() {
+		return dao.getQueue();
+	}
+
+	public void addTrackToQueue(int idToAdd) {
+		dao.addTrackToQueue(idToAdd);
+	}
+
+	public void removeTrackFromQueue(int trackId) {
+		dao.removeTrackFromQueue(trackId);
 	}
 }
