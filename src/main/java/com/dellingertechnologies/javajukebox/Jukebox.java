@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayer;
@@ -18,6 +20,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.BasicConfigurator;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.servlet.Context;
@@ -30,7 +35,6 @@ public class Jukebox implements BasicPlayerListener {
 
 	private Server server;
 	private BasicPlayer player;
-	private TrackFinder finder;
 	private BasicPlayerEvent currentState;
 	private Map currentFile;
 	private Map currentProgress;
@@ -48,8 +52,13 @@ public class Jukebox implements BasicPlayerListener {
 	private Track currentTrack;
 	private File databaseDirectory;
 	private Map<String,String> ratingHostCache = new HashMap<String,String>();
+	private TrackFinder queueFinder;
+	private MultiTrackFinder playFinder;
 
+	private Log log = LogFactory.getLog(Jukebox.class);
+	
 	public static void main(String[] args) throws Exception {
+		BasicConfigurator.configure();
 		CommandLine cmd = null;
 		try{
 			cmd = parseOptions(args);
@@ -65,7 +74,7 @@ public class Jukebox implements BasicPlayerListener {
 		this.port = cmd.hasOption('p') ? NumberUtils.toInt(cmd.getOptionValue('p')) : DEFAULT_PORT;
 		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(jukeboxHome + DEFAULT_DIRECTORY);
 		this.databaseDirectory = cmd.hasOption("db") ? new File(cmd.getOptionValue("db"), "db") : new File(directory, "db");
-		System.out.println("directory: "+directory);
+		log.info("Using directory: "+directory);
 
 		initializeDatabase();
 		initializeJukebox();
@@ -90,16 +99,24 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	private void initializeJukebox() throws BasicPlayerException {
+		log.info("Initializing jukebox...");
 		player = new BasicPlayer();
 		player.addBasicPlayerListener(this);
 //		finder = new RandomFSTrackFinder(directory);
 //		finder = new RandomDBTrackFinder(dao);
-		finder = new MultiTrackFinder(
+//		finder = new MultiTrackFinder(
+//				new QueueTrackFinder(dao),
+//				new RandomDBTrackFinder(dao));
+		TrackFinder weightedFinder = new WeightedDBTrackFinder(dao); 
+		playFinder = new MultiTrackFinder(
 				new QueueTrackFinder(dao),
-				new RandomDBTrackFinder(dao));
+				weightedFinder);
+		queueFinder = weightedFinder;
 	}
 
 	private void initializeServer() throws Exception {
+		log.info("Initializing server...");
+		Logger.getLogger("com.sun").setLevel( Level.SEVERE );
 		ServletHolder restServices = new ServletHolder(ServletContainer.class);
 
 		restServices.setInitParameter(
@@ -119,11 +136,12 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	private void initializeDatabase() throws Exception {
+		log.info("Initializing database...");
 		dao = new JukeboxDao(databaseDirectory);
 		if(dao.hasTracks(true)){
 			//else setup background thread to scan/refresh
 		}else{
-			System.out.println("No tracks in db...loading tracks before startup");
+			log.info("No tracks in db...loading tracks before startup");
 			loadTracks();
 		}
 	}
@@ -133,12 +151,14 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	public void powerOn() throws BasicPlayerException {
+		log.info("Jukebox...powering up");
 		playNextTrack();
 		player.setGain(1.0);
 		this.lastVolume = 1.0;
 	}
 
 	public void powerOff() throws Exception {
+		log.info("Jukebox...shutting down");
 		player.stop();
 		dao.shutdown();
 		server.stop();
@@ -161,7 +181,7 @@ public class Jukebox implements BasicPlayerListener {
 	
 	public void opened(Object resource, Map properties) {
 		this.currentFile = properties;
-		display("opened : " + properties.toString());
+		log.debug("opened : " + properties.toString());
 	}
 
 	public void progress(int bytesread, long microseconds, byte[] pcmdata,
@@ -207,7 +227,7 @@ public class Jukebox implements BasicPlayerListener {
 			case BasicPlayerEvent.UNKNOWN:
 				break;
 		}
-		display("stateUpdated : " + event.toString());
+		log.debug("stateUpdated : " + event.toString());
 	}
 
 	public boolean pauseTrack() {
@@ -231,7 +251,7 @@ public class Jukebox implements BasicPlayerListener {
 			}
 			return false;
 		}catch(Exception e){
-			e.printStackTrace();
+			log.warn("Exception resuming track", e);
 			return false;
 		}
 	}
@@ -244,7 +264,7 @@ public class Jukebox implements BasicPlayerListener {
 	public boolean playNextTrack() {
 		try {
 			player.stop();
-			Track track = finder.nextTrack();
+			Track track = playFinder.nextTrack();
 			if(track == null){
 				throw new Exception("null track returned");
 			}
@@ -257,8 +277,8 @@ public class Jukebox implements BasicPlayerListener {
 			currentTrack.setLastPlayed(new Date());
 			dao.addOrUpdateTrack(currentTrack);
 		} catch (Exception e) {
-			try{player.stop();}catch(Exception ex){ex.printStackTrace();}
-			e.printStackTrace();
+			try{player.stop();}catch(Exception ex){}
+			log.warn("Exception occurred playing track", e);
 			return playNextTrack();
 		}
 		return true;
@@ -266,12 +286,6 @@ public class Jukebox implements BasicPlayerListener {
 
 	private void clearRatingCache() {
 		ratingHostCache.clear();
-	}
-
-	private void display(Object obj) {
-		if (obj != null) {
-			System.out.println(obj.toString());
-		}
 	}
 
 	private synchronized void sleep(long delay) {
@@ -345,7 +359,12 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	public void addToQueue(int numberOfTracks) {
-		dao.addTracksToQueue(numberOfTracks);
+		for(int i=0;i<numberOfTracks;i++){
+			Track track = queueFinder.nextTrack();
+			if(track != null && track.getId()>0){
+				addTrackToQueue(track.getId());
+			}
+		}
 	}
 
 	public List<Track> getQueue() {

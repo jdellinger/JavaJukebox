@@ -6,9 +6,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.ddlutils.Platform;
 import org.apache.ddlutils.PlatformFactory;
 import org.apache.ddlutils.io.DatabaseIO;
@@ -29,6 +30,8 @@ public class JukeboxDao {
 	private Database database;
 	private NetworkServerControl derbyServer;
 
+	private Log log = LogFactory.getLog(JukeboxDao.class);
+	
 	public JukeboxDao(File dir) throws Exception{
 		this.dir = dir;
 		System.setProperty("jukebox.db.path", dir.getAbsolutePath());
@@ -41,7 +44,7 @@ public class JukeboxDao {
 			derbyServer = new NetworkServerControl();
 			derbyServer.start(null);
 		}catch(Exception e){
-			e.printStackTrace();
+			log.error("Exception starting derby server", e);
 		}
 	}
 	
@@ -50,7 +53,7 @@ public class JukeboxDao {
 			if(derbyServer != null)
 				derbyServer.shutdown();
 		}catch(Exception e){
-			e.printStackTrace();
+			log.error("Exception stopping derby server", e);
 		}
 	}
 
@@ -198,23 +201,21 @@ public class JukeboxDao {
 		return track;
 	}
 	
-	public void addTracksToQueue(int numberOfTracks){
-		for(int i=0;i<numberOfTracks;i++){
-			Track track = getRandomTrack();
-			if(track != null && track.getId()>0){
-				getTemplate().update("insert into queue (track_id) values (?)", track.getId());
-			}
-		}
-	}
-
 	public void addTrackToQueue(int id){
 		if (id > 0) {
 			getTemplate().update("insert into queue (track_id) values (?)", id);
 		}
 	}
 	
+	public List<Track> getTracks(){
+		TrackQuery q = new TrackQuery();
+		q.setDataSource(Locator.getDataSource());
+		q.setSql("select * from tracks where enabled = 1");
+		return q.getTracks();
+	}
+	
 	public List<Track> getQueue(){
-		QueueQuery q = new QueueQuery();
+		TrackQuery q = new TrackQuery();
 		q.setDataSource(Locator.getDataSource());
 		q.setSql("select t.* from queue q join tracks t on q.track_id = t.id where t.enabled = 1 order by q.id asc");
 		return q.getTracks();
@@ -225,7 +226,7 @@ public class JukeboxDao {
 	}
 }
 
-class QueueQuery extends MappingSqlQuery<Track> {
+class TrackQuery extends MappingSqlQuery<Track> {
 
 	private RowMapper<Track> mapper = new TrackRowMapper();
 	

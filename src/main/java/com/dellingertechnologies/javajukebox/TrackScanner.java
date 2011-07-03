@@ -13,15 +13,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioSystem;
-
 import org.apache.commons.lang.StringUtils;
-import org.tritonus.share.sampled.file.TAudioFileFormat;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.mpatric.mp3agic.Mp3File;
@@ -31,6 +28,8 @@ public class TrackScanner  {
 	private File baseDir;
 	private JukeboxDao dao;
 
+	private Log log = LogFactory.getLog(TrackScanner.class);
+	
 	private FilenameFilter mp3Filter = new FilenameFilter() {
 		public boolean accept(File dir, String name) {
 			return name.toLowerCase().endsWith("mp3");
@@ -54,7 +53,7 @@ public class TrackScanner  {
 				dao.addOrUpdateTrack(track);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("Exception loading tracks", e);
 		}
 		es.shutdown();
 	}
@@ -78,7 +77,7 @@ public class TrackScanner  {
 		}
 		public List<Track> call() throws Exception {
 			long start = System.currentTimeMillis();
-			System.out.println("Starting scan...");
+			log.info("Starting scan...");
 			List<Track> tracks = new ArrayList<Track>();
 			int i = 1;
 			int totalCount = files.size();
@@ -97,15 +96,15 @@ public class TrackScanner  {
 					// track.setUser("");
 					tracks.add(track);
 				} catch (Exception e) {
-					System.out.println("Problem scanning file: "
+					log.warn("Problem scanning file: "
 							+ file.getPath());
 				}
 				if(i%100 == 0)
-					System.out.println("Scanning files..."+i+"/"+totalCount);
+					log.info("Scanning files..."+i+"/"+totalCount);
 				i++;
 			}
 			long seconds = (long) ((System.currentTimeMillis() - start) / 1000.0);
-			System.out.println("Scan complete..." + tracks.size()
+			log.info("Scan complete..." + tracks.size()
 					+ " tracks in " + seconds + " seconds");
 			return tracks;
 		}
@@ -124,7 +123,7 @@ public class TrackScanner  {
 					tags.put("album", mp3file.getId3v2Tag().getAlbum());
 				}
 			}catch(Exception e){
-				e.printStackTrace();
+				log.warn("Exception reading tags", e);
 			}
 			return tags;
 		}
@@ -148,7 +147,7 @@ public class TrackScanner  {
 
 				result = checksum.getValue();
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.warn("Exception creating checksum", e);
 			}
 			return result;
 		}
