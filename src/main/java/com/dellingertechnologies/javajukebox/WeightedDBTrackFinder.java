@@ -37,14 +37,14 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		double totalFitness = 0;
 		double minFitness = Integer.MAX_VALUE;
 		for(Track track : tracks){
-			double fitness = getFitness(track);
+			double fitness = getFitness(track, tracks.size());
 			totalFitness += fitness;
 			minFitness = fitness < minFitness ? fitness : minFitness;
 		}
 		baseFitness = 1 - minFitness;
 		double modifiedTotalFitness = totalFitness + (baseFitness * tracks.size());
 		for(Track track : tracks){
-			double fitness = getFitness(track);
+			double fitness = getFitness(track, tracks.size());
 			double modifiedFitness = baseFitness + fitness;
 			tmpWeights.put(track, modifiedFitness/modifiedTotalFitness);
 //			log.debug(StringUtils.join(
@@ -62,9 +62,12 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		}
 	}
 
-	private double getFitness(Track track) {
-		double modLikes = track.getLikes() > 0 ? 20*Math.log(track.getLikes()) : 0;
-		double modDislikes = track.getDislikes() > 0 ? 10*Math.log(track.getDislikes()) : 0;
+	private double getFitness(Track track, int count) {
+		// likeFactor: for 20 likes, should be approx. 1/100 odds for selection if all others have fitness of 1
+		double likeFactor = count/300;
+		double dislikeFactor = likeFactor/2;
+		double modLikes = track.getLikes() > 0 ? likeFactor*Math.log(track.getLikes()) : 0;
+		double modDislikes = track.getDislikes() > 0 ? dislikeFactor*Math.log(track.getDislikes()) : 0;
 		double modSkips = .1 * track.getSkips();
 		return modLikes - modDislikes - modSkips;
 	}
