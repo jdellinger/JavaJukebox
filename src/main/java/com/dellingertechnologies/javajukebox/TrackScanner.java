@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.mpatric.mp3agic.Mp3File;
 
-public class TrackScanner  {
+public class TrackScanner implements Runnable {
 
 	private File baseDir;
 	private JukeboxDao dao;
@@ -41,7 +41,7 @@ public class TrackScanner  {
 		this.dao = dao;
 	}
 
-	public void loadTracks() {
+	public void run() {
 		List<File> files = new ArrayList<File>();
 		loadFiles(files, baseDir);
 		
@@ -50,7 +50,15 @@ public class TrackScanner  {
 			Future<List<Track>> future = es.submit(new TrackProcessor(files));
 			List<Track> tracks = future.get();
 			for (Track track : tracks) {
-				dao.addOrUpdateTrack(track);
+				int id = dao.getTrackIdByChecksum(track.getChecksum());
+				if(id == 0){
+					dao.addOrUpdateTrack(track);
+				}else{
+					Track existingTrack = dao.getTrack(id);
+					existingTrack.setPath(track.getPath());
+					existingTrack.setEnabled(true);
+					dao.addOrUpdateTrack(existingTrack);
+				}
 			}
 		} catch (Exception e) {
 			log.error("Exception loading tracks", e);

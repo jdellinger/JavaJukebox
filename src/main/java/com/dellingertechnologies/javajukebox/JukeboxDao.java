@@ -106,12 +106,17 @@ public class JukeboxDao {
 	public Track getRandomTrack(){
 		return getTemplate().queryForObject("select * from tracks where enabled = ? order by random() fetch first row only", new Object[]{true}, new TrackRowMapper());
 	}
-	
-	public void addOrUpdateTrack(Track track) {
+
+	public int getTrackIdByChecksum(long checksum){
 		int id = 0;
 		try{
-			id = getTemplate().queryForInt("select id from tracks where checksum = ?", track.getChecksum());
+			id = getTemplate().queryForInt("select id from tracks where checksum = ?", checksum);
 		}catch(DataAccessException dae){}
+		return id;
+	}
+	
+	public void addOrUpdateTrack(Track track) {
+		int id = getTrackIdByChecksum(track.getChecksum());
 		if(id > 0){
 			String updateSql = "update tracks set title = ?, album = ?, artist = ?, path = ?, checksum = ?, likes = ?, dislikes = ?, plays = ?, skips = ?, lastplayed = ?, explicit = ?, enabled = ? where id = ?";
 			getTemplate().update(updateSql,

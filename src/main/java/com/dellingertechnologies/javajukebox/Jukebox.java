@@ -5,6 +5,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -138,16 +142,15 @@ public class Jukebox implements BasicPlayerListener {
 	private void initializeDatabase() throws Exception {
 		log.info("Initializing database...");
 		dao = new JukeboxDao(databaseDirectory);
+		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+		TrackScanner scanner = new TrackScanner(directory, dao);
 		if(dao.hasTracks(true)){
-			//else setup background thread to scan/refresh
+			es.scheduleAtFixedRate(scanner, 0, 30, TimeUnit.MINUTES);
 		}else{
 			log.info("No tracks in db...loading tracks before startup");
-			loadTracks();
+			Future<?> f = es.submit(scanner);
+			f.get();
 		}
-	}
-
-	private void loadTracks() {
-		new TrackScanner(directory, dao).loadTracks();
 	}
 
 	public void powerOn() throws BasicPlayerException {
@@ -262,20 +265,27 @@ public class Jukebox implements BasicPlayerListener {
 		return playNextTrack();
 	}
 	public boolean playNextTrack() {
+		Track track = null;
 		try {
 			player.stop();
-			Track track = playFinder.nextTrack();
+			track = playFinder.nextTrack();
 			if(track == null){
 				throw new Exception("null track returned");
 			}
-			player.open(new File(track.getPath()));
-			currentTrack = track;
-			clearRatingCache();
-			player.play();
-			player.setGain(lastVolume);
-			currentTrack.incrementPlays();
-			currentTrack.setLastPlayed(new Date());
-			dao.addOrUpdateTrack(currentTrack);
+			File trackFile = new File(track.getPath());
+			if(trackFile.exists() && trackFile.canRead()){
+				player.open(trackFile);
+				currentTrack = track;
+				clearRatingCache();
+				player.play();
+				player.setGain(lastVolume);
+				currentTrack.incrementPlays();
+				currentTrack.setLastPlayed(new Date());
+				dao.addOrUpdateTrack(currentTrack);
+			}else{
+				track.setEnabled(false);
+				dao.addOrUpdateTrack(track);
+			}
 		} catch (Exception e) {
 			try{player.stop();}catch(Exception ex){}
 			log.warn("Exception occurred playing track", e);
