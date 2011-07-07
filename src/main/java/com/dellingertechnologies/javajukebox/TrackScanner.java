@@ -80,8 +80,14 @@ public class TrackScanner implements Runnable {
 
 	private class TrackProcessor implements Callable<List<Track>> {
 		List<File> files;
+		private boolean verbose = false;
+		
 		public TrackProcessor(List<File> files){
+			this(files, false);
+		}
+		public TrackProcessor(List<File> files, boolean verbose){
 			this.files = files;
+			this.verbose = verbose;
 		}
 		public List<Track> call() throws Exception {
 			long start = System.currentTimeMillis();
@@ -107,7 +113,7 @@ public class TrackScanner implements Runnable {
 					log.warn("Problem scanning file: "
 							+ file.getPath());
 				}
-				if(i%100 == 0)
+				if(verbose  && i%100 == 0)
 					log.info("Scanning files..."+i+"/"+totalCount);
 				i++;
 			}

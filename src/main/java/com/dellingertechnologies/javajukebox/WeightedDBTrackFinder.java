@@ -9,6 +9,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
+import org.joda.time.Period;
 
 import com.dellingertechnologies.javajukebox.model.Track;
 
@@ -69,7 +72,13 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		double modLikes = track.getLikes() > 0 ? likeFactor*Math.log(track.getLikes()) : 0;
 		double modDislikes = track.getDislikes() > 0 ? dislikeFactor*Math.log(track.getDislikes()) : 0;
 		double modSkips = .1 * track.getSkips();
-		return modLikes - modDislikes - modSkips;
+		DateTime hourAgo = new DateTime().minusHours(1);
+		DateTime lastPlayed = new DateTime(track.getLastPlayed());
+		double modTime = 0;
+		if(lastPlayed.isAfter(hourAgo)){
+			modTime = 100;
+		}
+		return modLikes - modDislikes - modSkips - modTime;
 	}
 
 	public Track nextTrack() {

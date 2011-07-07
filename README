@@ -22,8 +22,6 @@ Defaults: port=9999, directory=JUKEBOX_HOME/music, db_directory=JUKEBOX_HOME/mus
 This has been tested using Java6 on Windows XP and Mac OS X Snow Leopard.
 
 TODO:
-* Add upcoming tracks queue
-* Build weighting function into track selector based on likes/dislikes/skips/lastplayed
 * Add sound bite builder to create sound bites from existing tracks
 * Add sound bite injection
 * Add username based directories for segmenting music
