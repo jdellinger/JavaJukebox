@@ -3,6 +3,7 @@ package com.dellingertechnologies.javajukebox;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -10,8 +11,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
-import org.joda.time.Interval;
-import org.joda.time.Period;
 
 import com.dellingertechnologies.javajukebox.model.Track;
 
@@ -21,11 +20,13 @@ public class WeightedDBTrackFinder implements TrackFinder {
 	private Map<Track,Double> weights = new HashMap<Track, Double>();
 	
 	private double baseFitness = 0;
-
+	private Random random = null;
+	
 	private Log log = LogFactory.getLog(WeightedDBTrackFinder.class);
 	
 	public WeightedDBTrackFinder(JukeboxDao dao){
 		this.dao = dao;
+		random = new Random(System.currentTimeMillis());
 		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
 		es.scheduleAtFixedRate(new Runnable(){
 			public void run() {
@@ -82,12 +83,12 @@ public class WeightedDBTrackFinder implements TrackFinder {
 	}
 
 	public Track nextTrack() {
-		double random = Math.random();
+		double randomWeight = random.nextDouble();
 		double currentWeight = 0;
 		synchronized(this){
 			for(Map.Entry<Track, Double> weight : weights.entrySet()){
 				currentWeight += weight.getValue();
-				if(currentWeight >= random){
+				if(currentWeight >= randomWeight){
 					return weight.getKey();
 				}
 			}

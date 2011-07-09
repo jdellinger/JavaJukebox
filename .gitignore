@@ -1,5 +1,5 @@
-target
-bin
-derby.log
-db
-music
+/target
+/bin
+/derby.log
+/db
+/music

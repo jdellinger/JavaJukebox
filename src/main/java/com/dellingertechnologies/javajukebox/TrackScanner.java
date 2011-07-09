@@ -137,7 +137,7 @@ public class TrackScanner implements Runnable {
 					tags.put("album", mp3file.getId3v2Tag().getAlbum());
 				}
 			}catch(Exception e){
-				log.warn("Exception reading tags", e);
+				log.warn("Exception reading tags for " + file.getPath(), e);
 			}
 			return tags;
 		}
