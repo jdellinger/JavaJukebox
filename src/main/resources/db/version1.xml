@@ -54,6 +54,10 @@
             type="SMALLINT"
             required="true"
             default="1"/>
+    <column name="username"
+            type="VARCHAR"
+            size="100"
+            required="true"/>
 	<index name="track_checksum">
 		<index-column name="checksum" />
 	</index>
@@ -67,5 +71,22 @@
     <column name="track_id"
             type="INTEGER"
             required="true"/>
+  </table>
+  <table name="users">
+    <column name="username"
+            type="VARCHAR"
+            size="100"
+            required="false"/>
+    <column name="gravatar_id"
+            type="VARCHAR"
+            size="100"
+            required="false"/>
+    <column name="enabled"
+            type="SMALLINT"
+            required="true"
+            default="1"/>
+	<index name="user_username">
+		<index-column name="username" />
+	</index>
   </table>
 </database>

@@ -23,17 +23,16 @@ import org.springframework.jdbc.object.MappingSqlQuery;
 import org.xml.sax.InputSource;
 
 import com.dellingertechnologies.javajukebox.model.Track;
+import com.dellingertechnologies.javajukebox.model.User;
 
 public class JukeboxDao {
 
-	private File dir;
 	private Database database;
 	private NetworkServerControl derbyServer;
 
 	private Log log = LogFactory.getLog(JukeboxDao.class);
 	
 	public JukeboxDao(File dir) throws Exception{
-		this.dir = dir;
 		System.setProperty("jukebox.db.path", dir.getAbsolutePath());
 		startDerbyServer();
 		validateTables();
@@ -100,11 +99,11 @@ public class JukeboxDao {
 	}
 	
 	public Track getTrack(int id){
-		return getTemplate().queryForObject("select * from tracks where id = ?", new Object[]{id}, new TrackRowMapper());
+		return getTemplate().queryForObject("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from tracks t, users u where t.username = u.username and id = ?", new Object[]{id}, new TrackRowMapper());
 	}
 
 	public Track getRandomTrack(){
-		return getTemplate().queryForObject("select * from tracks where enabled = ? order by random() fetch first row only", new Object[]{true}, new TrackRowMapper());
+		return getTemplate().queryForObject("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from tracks t, users u where t.username = u.username and t.enabled = ? and u.enabled = ? order by random() fetch first row only", new Object[]{true, true}, new TrackRowMapper());
 	}
 
 	public int getTrackIdByChecksum(long checksum){
@@ -115,10 +114,59 @@ public class JukeboxDao {
 		return id;
 	}
 	
+	public User getUserByUsername(String username){
+		User user = null;
+		try{
+			user = getTemplate().queryForObject("select * from users where username = ?", new Object[]{username}, new UserRowMapper());
+		}catch(DataAccessException dae){}
+		return user;
+	}
+
+	public List<User> getUsers(){
+		return getTemplate().query("select * from users", new UserRowMapper());
+	}
+	
+	public void deleteUser(User user){
+		getTemplate().update("delete from users where username = ?", user.getUsername());
+	}
+	
+	public void addOrUpdateUser(User user) {
+		User existingUser = getUserByUsername(user.getUsername());
+		if(existingUser != null){
+			String updateSql = "update users set gravatar_id = ?, enabled = ? where username = ?";
+			getTemplate().update(updateSql,
+					new Object[]{
+						user.getGravatarId(),
+						user.isEnabled(),
+						user.getUsername()
+					},
+					new int[]{
+						Types.VARCHAR,
+						Types.BOOLEAN,
+						Types.VARCHAR
+					}
+				);
+		}else{
+			String insertSql = "insert into users (username, gravatar_id, enabled) values (?, ?, ?)";
+			getTemplate().update(insertSql,
+					new Object[]{
+						user.getUsername(),
+						user.getGravatarId(),
+						user.isEnabled(),
+					},
+					new int[]{
+						Types.VARCHAR,
+						Types.VARCHAR,
+						Types.BOOLEAN
+					}
+			);
+		}
+	}
+	
 	public void addOrUpdateTrack(Track track) {
 		int id = getTrackIdByChecksum(track.getChecksum());
 		if(id > 0){
-			String updateSql = "update tracks set title = ?, album = ?, artist = ?, path = ?, checksum = ?, likes = ?, dislikes = ?, plays = ?, skips = ?, lastplayed = ?, explicit = ?, enabled = ? where id = ?";
+			String updateSql = "update tracks set title = ?, album = ?, artist = ?, path = ?, checksum = ?, likes = ?, dislikes = ?, plays = ?, skips = ?, lastplayed = ?, explicit = ?, enabled = ?, username = ? where id = ?";
 			getTemplate().update(updateSql,
 					new Object[]{
 						track.getTitle(),
@@ -133,6 +181,7 @@ public class JukeboxDao {
 						track.getLastPlayed(),
 						track.isExplicit(),
 						track.isEnabled(),
+						track.getUser().getUsername(),
 						id
 					},
 					new int[]{
@@ -148,11 +197,12 @@ public class JukeboxDao {
 						Types.TIMESTAMP,
 						Types.BOOLEAN,
 						Types.BOOLEAN,
+						Types.VARCHAR,
 						Types.NUMERIC
 					}
 			);
 		}else{
-			String insertSql = "insert into tracks (title, album, artist, path, checksum, likes, dislikes, plays, skips, lastplayed, explicit, enabled) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+			String insertSql = "insert into tracks (title, album, artist, path, checksum, likes, dislikes, plays, skips, lastplayed, explicit, enabled, username) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 			getTemplate().update(insertSql,
 					new Object[]{
 						track.getTitle(),
@@ -166,7 +216,8 @@ public class JukeboxDao {
 						track.getSkips(),
 						track.getLastPlayed(),
 						track.isExplicit(),
-						track.isEnabled()
+						track.isEnabled(),
+						track.getUser().getUsername()
 					},
 					new int[]{
 						Types.VARCHAR,
@@ -180,7 +231,8 @@ public class JukeboxDao {
 						Types.NUMERIC,
 						Types.TIMESTAMP,
 						Types.BOOLEAN,
-						Types.BOOLEAN
+						Types.BOOLEAN,
+						Types.VARCHAR
 					}
 			);
 		}
@@ -199,7 +251,7 @@ public class JukeboxDao {
 		if(hasTracksInQueue()){
 			int queue_id = getTemplate().queryForInt("select id from queue order by id asc fetch first row only");
 			if(queue_id > 0){
-				track = getTemplate().queryForObject("select t.* from queue q join tracks t on q.track_id = t.id where q.id = ? and t.enabled = 1", new Object[]{queue_id}, new TrackRowMapper());
+				track = getTemplate().queryForObject("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from queue q, tracks t, users u where q.track_id = t.id and t.username = u.username and q.id = ? and t.enabled = 1 and u.enabled = 1", new Object[]{queue_id}, new TrackRowMapper());
 			}
 			getTemplate().update("delete from queue where id = ?", queue_id);
 		}
@@ -215,14 +267,14 @@ public class JukeboxDao {
 	public List<Track> getTracks(){
 		TrackQuery q = new TrackQuery();
 		q.setDataSource(Locator.getDataSource());
-		q.setSql("select * from tracks where enabled = 1");
+		q.setSql("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from tracks t, users u where t.username = u.username and t.enabled = 1 and u.enabled = 1");
 		return q.getTracks();
 	}
 	
 	public List<Track> getQueue(){
 		TrackQuery q = new TrackQuery();
 		q.setDataSource(Locator.getDataSource());
-		q.setSql("select t.* from queue q join tracks t on q.track_id = t.id where t.enabled = 1 order by q.id asc");
+		q.setSql("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from queue q, tracks t, users u where q.track_id = t.id and u.username = t.username and t.enabled = 1 and u.enabled = 1 order by q.id asc");
 		return q.getTracks();
 	}
 

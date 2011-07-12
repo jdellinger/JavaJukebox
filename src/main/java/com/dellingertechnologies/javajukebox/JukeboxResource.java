@@ -17,6 +17,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dellingertechnologies.javajukebox.model.Track;
+import com.dellingertechnologies.javajukebox.model.User;
 
 @Path("/jukebox")
 public class JukeboxResource {
@@ -58,7 +59,17 @@ public class JukeboxResource {
 			String relativePath = new File(track.getPath()).getCanonicalPath();
 			String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
 			json.put("file", relativePath.replace(directoryPath, ""));
-
+			
+			json.put("user", toJSON(track.getUser()));
+		}
+		return json;
+	}
+	
+	private JSONObject toJSON(User user) throws Exception {
+		JSONObject json = new JSONObject();
+		if(user != null){
+			json.put("username", user.getUsername());
+			json.put("gravatarId", user.getGravatarId());
 		}
 		return json;
 	}

@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dellingertechnologies.javajukebox.model.Track;
+import com.dellingertechnologies.javajukebox.model.User;
 import com.mpatric.mp3agic.Mp3File;
 
 public class TrackScanner implements Runnable {
@@ -35,6 +36,11 @@ public class TrackScanner implements Runnable {
 			return name.toLowerCase().endsWith("mp3");
 		}
 	};
+	private FilenameFilter jbxFilter = new FilenameFilter() {
+		public boolean accept(File dir, String name) {
+			return name.toLowerCase().equals("user.jbx");
+		}
+	};
 
 	public TrackScanner(File baseDir, JukeboxDao dao) {
 		this.baseDir = baseDir;
@@ -42,8 +48,8 @@ public class TrackScanner implements Runnable {
 	}
 
 	public void run() {
-		List<File> files = new ArrayList<File>();
-		loadFiles(files, baseDir);
+		List<FileWrapper> files = new ArrayList<FileWrapper>();
+		loadFiles(files, baseDir, User.DEFAULT);
 		
 		ExecutorService es = Executors.newSingleThreadExecutor();
 		try {
@@ -57,6 +63,7 @@ public class TrackScanner implements Runnable {
 					Track existingTrack = dao.getTrack(id);
 					existingTrack.setPath(track.getPath());
 					existingTrack.setEnabled(true);
+					existingTrack.setUser(track.getUser());
 					dao.addOrUpdateTrack(existingTrack);
 				}
 			}
@@ -66,26 +73,35 @@ public class TrackScanner implements Runnable {
 		es.shutdown();
 	}
 
-	private void loadFiles(List<File> files, File parent) {
+	private void loadFiles(List<FileWrapper> files, File parent, User parentUser) {
 		if (parent != null && parent.isDirectory()) {
+			User user = checkForUser(parent, parentUser);
 			for (File file : parent.listFiles()) {
 				if (file.isDirectory()) {
-					loadFiles(files, file);
+					loadFiles(files, file, user);
 				} else if (mp3Filter.accept(parent, file.getName())) {
-					files.add(file);
+					files.add(new FileWrapper(file, user));
 				}
 			}
 		}
 	}
 
+	private User checkForUser(File parent, User parentUser) {
+		User user = dao.getUserByUsername(parent.getName().toLowerCase());
+		if(user == null){
+			user = parentUser;
+		}
+		return user;
+	}
+
 	private class TrackProcessor implements Callable<List<Track>> {
-		List<File> files;
+		List<FileWrapper> files;
 		private boolean verbose = false;
 		
-		public TrackProcessor(List<File> files){
+		public TrackProcessor(List<FileWrapper> files){
 			this(files, false);
 		}
-		public TrackProcessor(List<File> files, boolean verbose){
+		public TrackProcessor(List<FileWrapper> files, boolean verbose){
 			this.files = files;
 			this.verbose = verbose;
 		}
@@ -95,9 +111,9 @@ public class TrackScanner implements Runnable {
 			List<Track> tracks = new ArrayList<Track>();
 			int i = 1;
 			int totalCount = files.size();
-			for (File file : files) {
+			for (FileWrapper fileWrapper : files) {
 				try {
-					 Map p = readTags(file);
+					 Map p = readTags(fileWrapper.file);
 					Track track = new Track();
 					track.setTitle(StringUtils.trimToEmpty((String) p
 							.get("title")));
@@ -105,13 +121,13 @@ public class TrackScanner implements Runnable {
 							.get("album")));
 					track.setArtist(StringUtils.trimToEmpty((String) p
 							.get("author")));
-					 track.setChecksum(createChecksum(file));
-					track.setPath(file.getAbsolutePath());
-					// track.setUser("");
+					 track.setChecksum(createChecksum(fileWrapper.file));
+					track.setPath(fileWrapper.file.getAbsolutePath());
+					track.setUser(fileWrapper.user);
 					tracks.add(track);
 				} catch (Exception e) {
 					log.warn("Problem scanning file: "
-							+ file.getPath());
+							+ fileWrapper.file.getPath());
 				}
 				if(verbose  && i%100 == 0)
 					log.info("Scanning files..."+i+"/"+totalCount);
@@ -167,4 +183,12 @@ public class TrackScanner implements Runnable {
 		}
 	}
 
+	private class FileWrapper {
+		File file;
+		User user;
+		public FileWrapper(File file, User user) {
+			this.file = file;
+			this.user = user;
+		}
+	}
 }

@@ -19,10 +19,16 @@ where <port> is the web interface port
   
 Defaults: port=9999, directory=JUKEBOX_HOME/music, db_directory=JUKEBOX_HOME/music
 
-This has been tested using Java6 on Windows XP and Mac OS X Snow Leopard.
+An optional settings.jbx file can exist at the top of your music directory. If it exists, it will be used to populate user info. If not, all tracks will be associated with default user. This settings file is a standard java properties files. The "users" property should be a comma delimited list of usernames. Each of those may define a property "gravatarId" to specify a gravatar hash to use as a user icon. Any tracks appearing in or beneath a directory whose name matches a user name will be associated with that user. Example:
+users=user1,user2
+user1.gravatarId=<somelargehash>
+user2.gravatarId=<someotherhash>
+
+The default username is "default". If you wish to override the gravatar hash for the default account, simply specify it in the settings file just as you would any other user. The settings file is watched for changes and updates are dynamically loaded without restarting the server.
+
+This app has been tested using Java6 on Windows XP and Mac OS X Snow Leopard.
 
 TODO:
 * Add sound bite builder to create sound bites from existing tracks
 * Add sound bite injection
-* Add username based directories for segmenting music
 * Add custom playlists

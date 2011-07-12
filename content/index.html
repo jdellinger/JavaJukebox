@@ -131,7 +131,10 @@
 
 			function updateNowPlaying(track, file){
 				$('#nowplaying').empty();
-				var trackElement = $('<div/>', {'class': 'title', text: 'Title: '+trimToEmpty(track.title)})
+				var userTooltip = 'User: '+trimToEmpty(track.user.username);
+				var trackElement = $('<div/>')
+					.append($('<img/>', {'id': 'gravatar', src: 'http://www.gravatar.com/avatar/'+trimToEmpty(track.user.gravatarId)+'.jpg?d=mm&r=pg&s=50', title: userTooltip, alt: userTooltip}))
+					.append($('<div/>', {'class': 'title', text: 'Title: '+trimToEmpty(track.title)}))
 					.append($('<div/>', {'class': 'album', text: 'Album: '+trimToEmpty(track.album)}))
 					.append($('<div/>', {'class': 'artist', text: 'Artist: '+trimToEmpty(track.artist)}))
 					.append($('<div/>', {'class': 'file', text: 'File: '+trimToEmpty(track.file)}));
@@ -229,6 +232,9 @@
 							}
 							var removeLink = "(<a href='#' onclick='removeFromQueue(" + value.id + ");return false;'>Remove</a>)";
 					    	tracks.push('<li>');
+							var userTooltip = 'User: '+trimToEmpty(value.user.username);
+							var gimg = "<img id='gravatar' src='http://www.gravatar.com/avatar/"+trimToEmpty(value.user.gravatarId)+".jpg?d=mm&r=pg&s=30' title='"+userTooltip+"' alt='"+userTooltip+"'/>";
+							tracks.push(gimg.toString());
 					    	tracks.push(title + ' ' + album);
 					    	if(value.artist){
 					    		tracks.push('<br/><i>' + value.artist + '</i>');
@@ -252,7 +258,7 @@
 			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
 			ul#icons span.ui-icon {float: left; margin: 0 4px;}
 			
-			#ratings { font-weight: bold; }
+			#ratings { font-weight: bold; clear: both;}
 			#ratinglinks { width: 400px }
 			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
 			#like { width: 0px; padding: 8px 35px; background: #ffffff url(images/happy_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
@@ -262,6 +268,7 @@
 			#volumeSlider {width: 100px;}
 			#progressbar {width: 400px;}
 			
+			#gravatar {position: relative; float: left; padding-right: 10px;}
 			.red { color: #E41010 }
 			.green { color: #099612 }
 		</style>	

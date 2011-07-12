@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +24,11 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.jci.monitor.FilesystemAlterationListener;
+import org.apache.commons.jci.monitor.FilesystemAlterationMonitor;
+import org.apache.commons.jci.monitor.FilesystemAlterationObserver;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +39,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
 import com.dellingertechnologies.javajukebox.model.Track;
+import com.dellingertechnologies.javajukebox.model.User;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 public class Jukebox implements BasicPlayerListener {
@@ -48,6 +55,7 @@ public class Jukebox implements BasicPlayerListener {
 
 	private static int DEFAULT_PORT = 9999;
 	private static String DEFAULT_DIRECTORY = "/music";
+	private static long TRACK_INTERVAL_MINUTES = 30;
 	
 	private static Jukebox jukebox;
 	private JukeboxDao dao;
@@ -58,8 +66,10 @@ public class Jukebox implements BasicPlayerListener {
 	private Map<String,String> ratingHostCache = new HashMap<String,String>();
 	private TrackFinder queueFinder;
 	private MultiTrackFinder playFinder;
+	private ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
 
 	private Log log = LogFactory.getLog(Jukebox.class);
+	private FilesystemAlterationMonitor fam;
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -79,6 +89,8 @@ public class Jukebox implements BasicPlayerListener {
 		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(jukeboxHome + DEFAULT_DIRECTORY);
 		this.databaseDirectory = cmd.hasOption("db") ? new File(cmd.getOptionValue("db"), "db") : new File(directory, "db");
 		log.info("Using directory: "+directory);
+
+		fam = new FilesystemAlterationMonitor();
 
 		initializeDatabase();
 		initializeJukebox();
@@ -142,19 +154,32 @@ public class Jukebox implements BasicPlayerListener {
 	private void initializeDatabase() throws Exception {
 		log.info("Initializing database...");
 		dao = new JukeboxDao(databaseDirectory);
-		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+		initializeSettings();
 		TrackScanner scanner = new TrackScanner(directory, dao);
 		if(dao.hasTracks(true)){
-			es.scheduleAtFixedRate(scanner, 0, 30, TimeUnit.MINUTES);
+			es.scheduleAtFixedRate(scanner, 0, TRACK_INTERVAL_MINUTES, TimeUnit.MINUTES);
 		}else{
 			log.info("No tracks in db...loading tracks before startup");
 			Future<?> f = es.submit(scanner);
 			f.get();
+			es.scheduleAtFixedRate(scanner, TRACK_INTERVAL_MINUTES, TRACK_INTERVAL_MINUTES, TimeUnit.MINUTES);
 		}
+		
+	}
+	
+	private void initializeSettings(){
+		log.info("Initializing settings...");
+		dao.addOrUpdateUser(User.DEFAULT);
+		File settingsFile = new File(directory, "settings.jbx");
+		SettingsFileListener settingsFileListener = new SettingsFileListener(dao);
+		settingsFileListener.onFileChange(settingsFile);
+		
+		fam.addListener(settingsFile, settingsFileListener);
 	}
 
 	public void powerOn() throws BasicPlayerException {
 		log.info("Jukebox...powering up");
+		fam.start();
 		playNextTrack();
 		player.setGain(1.0);
 		this.lastVolume = 1.0;
@@ -163,6 +188,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void powerOff() throws Exception {
 		log.info("Jukebox...shutting down");
 		player.stop();
+		fam.stop();
 		dao.shutdown();
 		server.stop();
 	}

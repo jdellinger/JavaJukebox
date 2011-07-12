@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
@@ -28,11 +30,18 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		this.dao = dao;
 		random = new Random(System.currentTimeMillis());
 		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
-		es.scheduleAtFixedRate(new Runnable(){
+		Runnable refreshWeights = new Runnable(){
 			public void run() {
 				refreshWeights();
 			}
-		}, 0, 30, TimeUnit.MINUTES);
+		};
+		Future<?> future = es.submit(refreshWeights);
+		try{
+			future.get();
+		}catch(Exception e){
+			log.warn("Exception refreshing weights", e);
+		}
+		es.scheduleAtFixedRate(refreshWeights, 0, 30, TimeUnit.MINUTES);
 	}
 	
 	private void refreshWeights() {
