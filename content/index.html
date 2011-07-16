@@ -156,13 +156,13 @@
 			function updateRatings(rating){
 				var ratingElement;
 				if(rating == "LIKE"){
-					ratingElement = $('<span/>', {text: 'You like this!', class: 'green'});
+					ratingElement = $('<span/>', {text: 'You juked this!', class: 'green'});
 				}else if(rating == "DISLIKE"){
-					ratingElement = $('<span/>', {text: 'You dislike this!', class: 'red'});
+					ratingElement = $('<span/>', {text: 'You junked this!', class: 'red'});
 				}else{
 					ratingElement = $('<div/>', {id: 'ratinglinks', class: 'ui-widget ui-helper-clearfix'})
-						.append($('<div/>', {id: 'like', text: 'Like', click: like}))
-						.append($('<div/>', {id: 'dislike', text: 'Dislike', click: dislike}));
+						.append($('<div/>', {id: 'like', text: 'Juke it!', click: like}))
+						.append($('<div/>', {id: 'dislike', text: 'Junk it!', click: dislike}));
 				}
 				$('#ratings').empty();
 				ratingElement.appendTo('#ratings');
@@ -262,7 +262,7 @@
 			#ratinglinks { width: 400px }
 			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
 			#like { width: 0px; padding: 8px 35px; background: #ffffff url(images/happy_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
-			#dislike { width: 15px;  padding: 8px 35px; background: #ffffff url(images/sad_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#dislike { width: 0px;  padding: 8px 35px; background: #ffffff url(images/sad_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
 			#explicitImage { width: 56px; height: 40px;  background: #ffffff url(images/explicit.jpg) no-repeat; background-position: 3px 3px; color: #788BB6; }
 			
 			#volumeSlider {width: 100px;}
