@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.object.MappingSqlQuery;
 import org.xml.sax.InputSource;
 
+import com.dellingertechnologies.javajukebox.model.Snippet;
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.dellingertechnologies.javajukebox.model.User;
 
@@ -70,13 +71,13 @@ public class JukeboxDao {
 	}
 
 	private void createTables() throws Exception {
-		database = new DatabaseIO().read(new InputSource(this.getClass().getResourceAsStream("/db/version1.xml")));
+		database = new DatabaseIO().read(new InputSource(this.getClass().getResourceAsStream("/db/schema.xml")));
 		Platform platform = PlatformFactory.createNewPlatformInstance(Locator.getDataSource());
 		platform.createTables(database, false, false);
 	}
 
 	private void alterTables() throws Exception {
-		database = new DatabaseIO().read(new InputSource(this.getClass().getResourceAsStream("/db/version1.xml")));
+		database = new DatabaseIO().read(new InputSource(this.getClass().getResourceAsStream("/db/schema.xml")));
 		Platform platform = PlatformFactory.createNewPlatformInstance(Locator.getDataSource());
 		platform.alterTables(database, false);
 	}
@@ -280,6 +281,10 @@ public class JukeboxDao {
 
 	public void removeTrackFromQueue(int trackId) {
 		getTemplate().update("delete from queue where track_id = ?", new Object[]{trackId});
+	}
+
+	public Snippet getSnippetByToken(String token) {
+		return getTemplate().queryForObject("select * from snippets where token = ?", new Object[]{token}, new SnippetRowMapper());
 	}
 }
 

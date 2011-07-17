@@ -38,6 +38,7 @@ public class JukeboxResource {
 		double progress = totalFrames > 0 ? frame*1.0/totalFrames : 0;
 		response.put("progress", progress);
 		response.put("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
+		response.put("details", jukebox.getCurrentProgress());
 		return response;
 	}
 	
@@ -114,8 +115,7 @@ public class JukeboxResource {
 	@Path("restart")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject restart() throws Exception{
-		long bytes = ((Long)Jukebox.getInstance().getCurrentProgress().get("mp3.position.byte")).longValue();
-		long result = Jukebox.getInstance().getPlayer().seek(-bytes);
+		boolean result = Jukebox.getInstance().restartTrack();
 		return new JSONObject().put("result", result);
 	}
 

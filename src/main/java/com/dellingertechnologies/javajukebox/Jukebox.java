@@ -3,9 +3,12 @@ package com.dellingertechnologies.javajukebox;
 import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,11 +27,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.jci.monitor.FilesystemAlterationListener;
 import org.apache.commons.jci.monitor.FilesystemAlterationMonitor;
-import org.apache.commons.jci.monitor.FilesystemAlterationObserver;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,6 +37,7 @@ import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
+import com.dellingertechnologies.javajukebox.model.Snippet;
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.dellingertechnologies.javajukebox.model.User;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
@@ -67,9 +67,11 @@ public class Jukebox implements BasicPlayerListener {
 	private TrackFinder queueFinder;
 	private MultiTrackFinder playFinder;
 	private ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+	private Queue<String> snippetQueue = new LinkedList<String>();
 
 	private Log log = LogFactory.getLog(Jukebox.class);
 	private FilesystemAlterationMonitor fam;
+	private boolean isPlayingSnippet;
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -216,8 +218,20 @@ public class Jukebox implements BasicPlayerListener {
 	public void progress(int bytesread, long microseconds, byte[] pcmdata,
 			Map properties) {
 		this.currentProgress = properties;
+		checkSnippets();
 	}
 
+	private void checkSnippets() {
+		String token = snippetQueue.poll();
+		if(token != null){
+			playSnippet(token);
+		}
+	}
+
+	public boolean isPlayingSnippet(){
+		return isPlayingSnippet;
+	}
+	
 	public void setController(BasicController controller) {
 
 	}
@@ -274,7 +288,7 @@ public class Jukebox implements BasicPlayerListener {
 	
 	public boolean resumeTrack() {
 		try{
-			if(player.getStatus() == BasicPlayer.PAUSED){
+			if(player.getStatus() == BasicPlayer.PAUSED && !isPlayingSnippet()){
 				player.resume();
 				return true;
 			}
@@ -286,9 +300,13 @@ public class Jukebox implements BasicPlayerListener {
 	}
 
 	public boolean skipTrack() {
-		currentTrack.incrementSkips();
-		dao.addOrUpdateTrack(currentTrack);
-		return playNextTrack();
+		if(!isPlayingSnippet()){
+			currentTrack.incrementSkips();
+			dao.addOrUpdateTrack(currentTrack);
+			return playNextTrack();
+		}else {
+			return false;
+		}
 	}
 	public boolean playNextTrack() {
 		Track track = null;
@@ -414,4 +432,43 @@ public class Jukebox implements BasicPlayerListener {
 	public void removeTrackFromQueue(int trackId) {
 		dao.removeTrackFromQueue(trackId);
 	}
+
+	public boolean enqueueSnippet(String token) {
+		return snippetQueue.offer(token);
+	}
+	
+	public void clearSnippetQueue(){
+		snippetQueue.clear();
+	}
+	
+	public boolean playSnippet(String token) {
+		Snippet snippet = dao.getSnippetByToken(token);
+		if (snippet != null) {
+			Track track = dao.getTrack(snippet.getTrackId());
+			if (track != null) {
+				isPlayingSnippet = true;
+				pauseTrack();
+				new SnippetPlayer(snippet, track, lastVolume).play();
+				isPlayingSnippet = false;
+				resumeTrack();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean restartTrack() {
+		if(!isPlayingSnippet()){
+			try{
+				long bytes = ((Long)getCurrentProgress().get("mp3.position.byte")).longValue();
+				player.seek(-bytes);
+			}catch(Exception e){
+				log.warn("Could not seek to start of file", e);
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}
+
 }
