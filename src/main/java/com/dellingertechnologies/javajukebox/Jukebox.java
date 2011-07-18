@@ -1,14 +1,13 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -469,6 +468,14 @@ public class Jukebox implements BasicPlayerListener {
 		}else{
 			return false;
 		}
+	}
+
+	public List<Snippet> getSnippets() {
+		List<Snippet> snippets = new ArrayList<Snippet>();
+		for(String token : snippetQueue.toArray(new String[]{})){
+			snippets.add(dao.getSnippetByToken(token));
+		}
+		return snippets;
 	}
 
 }
