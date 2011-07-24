@@ -71,6 +71,7 @@ public class Jukebox implements BasicPlayerListener {
 	private Log log = LogFactory.getLog(Jukebox.class);
 	private FilesystemAlterationMonitor fam;
 	private boolean isPlayingSnippet;
+	protected WeightedDBTrackFinder weightedFinder;
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -124,7 +125,7 @@ public class Jukebox implements BasicPlayerListener {
 //		finder = new MultiTrackFinder(
 //				new QueueTrackFinder(dao),
 //				new RandomDBTrackFinder(dao));
-		TrackFinder weightedFinder = new WeightedDBTrackFinder(dao); 
+		weightedFinder = new WeightedDBTrackFinder(dao); 
 		playFinder = new MultiTrackFinder(
 				new QueueTrackFinder(dao),
 				weightedFinder);

@@ -3,13 +3,15 @@ package com.dellingertechnologies.javajukebox;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections.BoundedFifoBuffer;
+import org.apache.commons.collections.buffer.CircularFifoBuffer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -20,11 +22,12 @@ public class WeightedDBTrackFinder implements TrackFinder {
 
 	private JukeboxDao dao;
 	private Map<Track,Double> weights = new HashMap<Track, Double>();
+	private double calculatedTotal;
 	
-	private double baseFitness = 0;
 	private Random random = null;
 	
 	private Log log = LogFactory.getLog(WeightedDBTrackFinder.class);
+	private CircularFifoBuffer recentlyReturned = new CircularFifoBuffer(5);
 	
 	public WeightedDBTrackFinder(JukeboxDao dao){
 		this.dao = dao;
@@ -41,7 +44,7 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		}catch(Exception e){
 			log.warn("Exception refreshing weights", e);
 		}
-		es.scheduleAtFixedRate(refreshWeights, 0, 30, TimeUnit.MINUTES);
+		es.scheduleAtFixedRate(refreshWeights, 0, 3, TimeUnit.MINUTES);
 	}
 	
 	private void refreshWeights() {
@@ -49,17 +52,22 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		List<Track> tracks = dao.getTracks();
 		double totalFitness = 0;
 		double minFitness = Integer.MAX_VALUE;
+		Map<Track,Double> tfs = new HashMap<Track,Double>();
 		for(Track track : tracks){
-			double fitness = getFitness(track, tracks.size());
-			totalFitness += fitness;
-			minFitness = fitness < minFitness ? fitness : minFitness;
+			double f = getFitness(track, tracks.size());
+			tfs.put(track, f);
+			minFitness = f < minFitness ? f : minFitness;
 		}
-		baseFitness = 1 - minFitness;
-		double modifiedTotalFitness = totalFitness + (baseFitness * tracks.size());
-		for(Track track : tracks){
-			double fitness = getFitness(track, tracks.size());
-			double modifiedFitness = baseFitness + fitness;
-			tmpWeights.put(track, modifiedFitness/modifiedTotalFitness);
+		for(Map.Entry<Track, Double> entry : tfs.entrySet()){
+			double f = entry.getValue();
+			f = f - minFitness + 1;
+			entry.setValue(f);
+			totalFitness += f;
+		}
+		
+		for(Map.Entry<Track, Double> entry : tfs.entrySet()){
+			tmpWeights.put(entry.getKey(), entry.getValue());
+		}
 //			log.debug(StringUtils.join(
 //					new Object[]{
 //							track.getId(),
@@ -69,36 +77,48 @@ public class WeightedDBTrackFinder implements TrackFinder {
 //							modifiedTotalFitness
 //					}
 //					,":"));
-		}
 		synchronized(this){
 			weights = tmpWeights;
+			calculatedTotal = totalFitness;
 		}
 	}
 
-	private double getFitness(Track track, int count) {
+	protected double getFitness(Track track, int count) {
 		// likeFactor: for 20 likes, should be approx. 1/100 odds for selection if all others have fitness of 1
-		double likeFactor = count/300;
-		double dislikeFactor = likeFactor/2;
-		double modLikes = track.getLikes() > 0 ? likeFactor*Math.log(track.getLikes()) : 0;
-		double modDislikes = track.getDislikes() > 0 ? dislikeFactor*Math.log(track.getDislikes()) : 0;
-		double modSkips = .1 * track.getSkips();
-		DateTime hourAgo = new DateTime().minusHours(1);
-		DateTime lastPlayed = new DateTime(track.getLastPlayed());
-		double modTime = 0;
-		if(lastPlayed.isAfter(hourAgo)){
-			modTime = 100;
+		double likeFactor = count/300.0;
+		double dislikeFactor = likeFactor/2.0;
+		double skipFactor = dislikeFactor/10.0;
+		double lastPlayedModifier = likeFactor*2.5;
+		
+		double modLikes = track.getLikes() > 0 ? likeFactor*Math.log(track.getLikes()+1) : 0.0;
+		double modDislikes = track.getDislikes() > 0.0 ? dislikeFactor*Math.log(track.getDislikes()+1) : 0.0;
+		double modSkips = track.getSkips() > 0.0 ? skipFactor*Math.log(track.getSkips()+1) : 0.0;
+		
+		double modTime = 0.0;
+		if(track.getLastPlayed() != null){
+			DateTime hourAgo = new DateTime().minusHours(1);
+			DateTime lastPlayed = new DateTime(track.getLastPlayed());
+			if(lastPlayed.isAfter(hourAgo)){
+				modTime = lastPlayedModifier;
+			}
 		}
 		return modLikes - modDislikes - modSkips - modTime;
 	}
 
+	protected Map<Track,Double> getWeights(){
+		return weights;
+	}
+	
 	public Track nextTrack() {
-		double randomWeight = random.nextDouble();
+		double randomWeight = random.nextDouble()*calculatedTotal;
 		double currentWeight = 0;
 		synchronized(this){
-			for(Map.Entry<Track, Double> weight : weights.entrySet()){
-				currentWeight += weight.getValue();
-				if(currentWeight >= randomWeight){
-					return weight.getKey();
+			for(Map.Entry<Track, Double> entry : weights.entrySet()){
+				currentWeight += entry.getValue();
+				Track t = entry.getKey();
+				if(currentWeight >= randomWeight && !recentlyReturned.contains(t)){
+					recentlyReturned .add(t);
+					return t;
 				}
 			}
 		}
