@@ -1,4 +1,4 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.services;
 
 import java.io.File;
 import java.util.List;
@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.dellingertechnologies.javajukebox.Jukebox;
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.dellingertechnologies.javajukebox.model.User;
 

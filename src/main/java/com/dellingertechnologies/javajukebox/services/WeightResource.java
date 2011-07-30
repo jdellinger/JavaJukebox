@@ -1,4 +1,4 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.services;
 
 import java.util.Map;
 
@@ -11,6 +11,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.codehaus.jettison.json.JSONObject;
 
+import com.dellingertechnologies.javajukebox.Jukebox;
 import com.dellingertechnologies.javajukebox.model.Track;
 
 @Path("/weights")

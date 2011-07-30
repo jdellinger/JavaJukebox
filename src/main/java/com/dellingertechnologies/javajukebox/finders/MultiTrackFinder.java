@@ -1,5 +1,6 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.finders;
 
+import com.dellingertechnologies.javajukebox.TrackFinder;
 import com.dellingertechnologies.javajukebox.model.Track;
 
 public class MultiTrackFinder implements TrackFinder {

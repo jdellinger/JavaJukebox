@@ -36,6 +36,9 @@ import org.mortbay.jetty.handler.ResourceHandler;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 
+import com.dellingertechnologies.javajukebox.finders.MultiTrackFinder;
+import com.dellingertechnologies.javajukebox.finders.QueueTrackFinder;
+import com.dellingertechnologies.javajukebox.finders.WeightedDBTrackFinder;
 import com.dellingertechnologies.javajukebox.model.Snippet;
 import com.dellingertechnologies.javajukebox.model.Track;
 import com.dellingertechnologies.javajukebox.model.User;
@@ -71,7 +74,7 @@ public class Jukebox implements BasicPlayerListener {
 	private Log log = LogFactory.getLog(Jukebox.class);
 	private FilesystemAlterationMonitor fam;
 	private boolean isPlayingSnippet;
-	protected WeightedDBTrackFinder weightedFinder;
+	public WeightedDBTrackFinder weightedFinder;
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();

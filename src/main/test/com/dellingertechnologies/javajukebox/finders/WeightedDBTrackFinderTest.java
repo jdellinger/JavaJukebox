@@ -1,4 +1,4 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.finders;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -11,6 +11,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.dellingertechnologies.javajukebox.JukeboxDao;
+import com.dellingertechnologies.javajukebox.finders.WeightedDBTrackFinder;
 import com.dellingertechnologies.javajukebox.model.Track;
 
 public class WeightedDBTrackFinderTest {

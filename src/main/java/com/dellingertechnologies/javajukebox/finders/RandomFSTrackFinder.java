@@ -1,10 +1,11 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.finders;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dellingertechnologies.javajukebox.TrackFinder;
 import com.dellingertechnologies.javajukebox.model.Track;
 
 public class RandomFSTrackFinder implements TrackFinder {

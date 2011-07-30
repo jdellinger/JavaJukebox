@@ -1,4 +1,4 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.services;
 
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.dellingertechnologies.javajukebox.Jukebox;
 import com.dellingertechnologies.javajukebox.model.Snippet;
 
 @Path("/snippet")

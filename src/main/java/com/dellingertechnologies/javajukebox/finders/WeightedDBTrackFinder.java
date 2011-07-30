@@ -1,4 +1,4 @@
-package com.dellingertechnologies.javajukebox;
+package com.dellingertechnologies.javajukebox.finders;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +16,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 
+import com.dellingertechnologies.javajukebox.JukeboxDao;
+import com.dellingertechnologies.javajukebox.TrackFinder;
 import com.dellingertechnologies.javajukebox.model.Track;
 
 public class WeightedDBTrackFinder implements TrackFinder {
@@ -105,7 +107,7 @@ public class WeightedDBTrackFinder implements TrackFinder {
 		return modLikes - modDislikes - modSkips - modTime;
 	}
 
-	protected Map<Track,Double> getWeights(){
+	public Map<Track,Double> getWeights(){
 		return weights;
 	}
 	
