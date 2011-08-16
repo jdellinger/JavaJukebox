@@ -74,12 +74,12 @@ public class TrackScanner implements Runnable {
 	}
 
 	private void loadFiles(List<FileWrapper> files, File parent, User parentUser) {
-		if (parent != null && parent.isDirectory()) {
+		if (parent != null && parent.isDirectory() && parent.canRead()) {
 			User user = checkForUser(parent, parentUser);
 			for (File file : parent.listFiles()) {
 				if (file.isDirectory()) {
 					loadFiles(files, file, user);
-				} else if (mp3Filter.accept(parent, file.getName())) {
+				} else if (file.canRead() && mp3Filter.accept(parent, file.getName())) {
 					files.add(new FileWrapper(file, user));
 				}
 			}
