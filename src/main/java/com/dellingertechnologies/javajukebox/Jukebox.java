@@ -340,6 +340,10 @@ public class Jukebox implements BasicPlayerListener {
 		}
 		return true;
 	}
+	
+	public List<Track> searchTracks(String searchText) {
+		return dao.searchTracks(searchText);
+	}
 
 	private void clearRatingCache() {
 		ratingHostCache.clear();

@@ -60,7 +60,25 @@
 				});
 
 				$("#progressbar").progressbar();
-				
+
+				$('#searchButton').click(function(){
+					search($('#searchText').val());
+					return false;
+				});
+
+				$('#searchClear').click(function(){
+					search($('#searchText').val(''));
+					$('#results').empty();
+					return false;
+				});
+
+				$('#searchText').keypress(function(e){
+					if (e.which == 13) {
+						search($('#searchText').val());
+						return false;
+					}
+				});
+
 				updateAndScheduleUpdate();
 			});
 
@@ -199,6 +217,15 @@
 					});
 			}
 
+			function addTrackToQueue(id){
+				$.ajax({
+					  url: "/service/jukebox/queue/add?id="+id,
+					  success: function(data){
+						updateQueue();
+					  }
+					});
+			}
+
 			function addTracksToQueue(num){
 				$.ajax({
 					  url: "/service/jukebox/queue/add?num="+num,
@@ -247,6 +274,42 @@
 						 }).appendTo('#comingup');
 					  }
 					});
+			}
+
+			function search(text) {
+				$.ajax({
+					  url: "/service/jukebox/search?text="+text,
+					  success: function(data){
+						displayResults(data.results);
+					  }
+					});
+			}
+
+			function displayResults(results){
+				$('#results').empty();
+				var tracks = [];
+
+				 $.each(results, function(index, value) {
+					var title = value.title;
+					var album = value.album ? '('+ value.album +')' : '';
+					if(!title && !album && !value.artist){
+						title = 'File: ' + value.file;
+					}
+					var removeLink = "(<a href='#' onclick='addTrackToQueue(" + value.id + ");return false;'>Add</a>)";
+			    	tracks.push('<li>');
+					var userTooltip = 'User: '+trimToEmpty(value.user.username);
+					var gimg = "<img id='gravatar' src='http://www.gravatar.com/avatar/"+trimToEmpty(value.user.gravatarId)+".jpg?d=mm&r=pg&s=30' title='"+userTooltip+"' alt='"+userTooltip+"'/>";
+					tracks.push(gimg.toString());
+			    	tracks.push(title + ' ' + album);
+			    	if(value.artist){
+			    		tracks.push('<br/><i>' + value.artist + '</i>');
+			    	}
+			    	tracks.push('<br/>' + removeLink + '</li>');
+				  });
+				 $('<ul/>', {
+				    'class': 'upcoming-list',
+				    html: tracks.join('')
+				 }).appendTo('#results');
 			}
 		</script>
 		<style type="text/css">
@@ -302,6 +365,13 @@
 	</div>
 	<div id="comingup"></div>
 	
+	<h2>Search</h2>
+	<div id="search">
+		<input type="text" id="searchText" />
+		<input type="button" id="searchButton" value="Search" />
+		<input type="button" id="searchClear" value="Clear" />
+	</div>
+	<div id="results"></div>
 	</body>
 </html>
 

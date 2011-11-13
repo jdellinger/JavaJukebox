@@ -6,8 +6,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.ddlutils.Platform;
@@ -19,6 +21,7 @@ import org.apache.derby.jdbc.EmbeddedDataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.object.MappingSqlQuery;
 import org.xml.sax.InputSource;
 
@@ -264,7 +267,19 @@ public class JukeboxDao {
 			getTemplate().update("insert into queue (track_id) values (?)", id);
 		}
 	}
-	
+
+	public List<Track> searchTracks(String searchText) {
+		if (StringUtils.isNotBlank(searchText)) {
+			searchText = "%" + searchText + "%";
+			TrackQuery q = new TrackQuery();
+			q.setDataSource(Locator.getDataSource());
+			q.setSql("select t.*, u.username, u.gravatar_id, u.enabled as user_enabled from tracks t, users u where t.username = u.username and t.enabled = 1 and (upper(t.title) like ? or upper(t.album) like ? or upper(t.artist) like ?) order by t.title");
+			q.setParameters(new SqlParameter[] { new SqlParameter(Types.VARCHAR), new SqlParameter(Types.VARCHAR), new SqlParameter(Types.VARCHAR) });
+			return q.searchTracks(searchText.toUpperCase());
+		}
+		return new ArrayList<Track>();
+	}
+
 	public List<Track> getTracks(){
 		TrackQuery q = new TrackQuery();
 		q.setDataSource(Locator.getDataSource());
@@ -295,6 +310,11 @@ class TrackQuery extends MappingSqlQuery<Track> {
 	public List<Track> getTracks(){
 		return execute();
 	}
+
+	public List<Track> searchTracks(String searchText) {
+		return execute(searchText, searchText, searchText);
+	}
+
 	@Override
 	protected Track mapRow(ResultSet rs, int idx) throws SQLException {
 		return mapper.mapRow(rs, idx);

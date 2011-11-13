@@ -202,4 +202,15 @@ public class JukeboxResource {
 		return new JSONObject().put("queue", jsonTracks);
 	}
 
+	@GET
+	@Path("search")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject searchTracks(@QueryParam("text") String searchText) throws Exception {
+		List<Track> tracks = Jukebox.getInstance().searchTracks(searchText);
+		JSONArray jsonTracks = new JSONArray();
+		for (Track track : tracks) {
+			jsonTracks.put(toJSON(track));
+		}
+		return new JSONObject().put("results", jsonTracks);
+	}
 }
