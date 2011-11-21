@@ -57,14 +57,17 @@ public class TrackScanner implements Runnable {
 			List<Track> tracks = future.get();
 			for (Track track : tracks) {
 				int id = dao.getTrackIdByChecksum(track.getChecksum());
-				if(id == 0){
-					dao.addOrUpdateTrack(track);
-				}else{
+				if(id != 0){
 					Track existingTrack = dao.getTrack(id);
 					existingTrack.setPath(track.getPath());
 					existingTrack.setEnabled(true);
 					existingTrack.setUser(track.getUser());
-					dao.addOrUpdateTrack(existingTrack);
+					track = existingTrack;
+				}
+				try {
+					dao.addOrUpdateTrack(track);
+				}catch(Exception e){
+					log.error(String.format("Exception loading track: %s", track.toString()), e);
 				}
 			}
 		} catch (Exception e) {
