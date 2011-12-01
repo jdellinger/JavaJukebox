@@ -1,6 +1,7 @@
 package com.dellingertechnologies.javajukebox;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.jci.monitor.FilesystemAlterationMonitor;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
@@ -57,6 +59,7 @@ public class Jukebox implements BasicPlayerListener {
 
 	private static int DEFAULT_PORT = 9999;
 	private static String DEFAULT_DIRECTORY = "/music";
+	private static String TMP_DIRECTORY = "/tmp";
 	private static long TRACK_INTERVAL_MINUTES = 30;
 	
 	private static Jukebox jukebox;
@@ -84,8 +87,16 @@ public class Jukebox implements BasicPlayerListener {
 		}catch(ParseException e){
 			e.printStackTrace();
 		}
-		Jukebox.getInstance().initialize(cmd);
-		Jukebox.getInstance().powerOn();
+		if(isShutdownRequested(cmd)){
+			new ShutdownProcessor(cmd).process();
+		}else{
+			Jukebox.getInstance().initialize(cmd);
+			Jukebox.getInstance().powerOn();
+		}
+	}
+
+	private static boolean isShutdownRequested(CommandLine cmd) {
+		return cmd.hasOption("shutdown");
 	}
 
 	private void initialize(CommandLine cmd) throws Exception {
@@ -107,6 +118,7 @@ public class Jukebox implements BasicPlayerListener {
 		options.addOption("p", true, "Port for web server to accept requests");
 		options.addOption("d", true, "Root directory where music files are located");
 		options.addOption("db", true, "Root directory where database directory is located");
+		options.addOption("shutdown", false, "Shutdown running server");
 		CommandLineParser parser = new PosixParser();
 		return parser.parse( options, args);
 	}
@@ -146,6 +158,7 @@ public class Jukebox implements BasicPlayerListener {
 		restServices.setInitParameter("com.sun.jersey.config.property.packages",
 				"com.dellingertechnologies.javajukebox");
 
+		writePort();
 		server = new Server(port);
 		Context context = new Context(server, "/service", Context.SESSIONS);
 		context.addServlet(restServices, "/*");
@@ -154,6 +167,12 @@ public class Jukebox implements BasicPlayerListener {
 		contentHandler.setResourceBase(jukeboxHome + "/content");
 		server.addHandler(contentHandler);
 		server.start();
+	}
+
+	private void writePort() throws IOException {
+		File portFile = new File(jukeboxHome+TMP_DIRECTORY, "jukebox.port");
+		portFile.getParentFile().mkdirs();
+		FileUtils.writeStringToFile(portFile, String.valueOf(port));
 	}
 
 	private void initializeDatabase() throws Exception {
@@ -192,10 +211,20 @@ public class Jukebox implements BasicPlayerListener {
 
 	public void powerOff() throws Exception {
 		log.info("Jukebox...shutting down");
-		player.stop();
-		fam.stop();
-		dao.shutdown();
-		server.stop();
+		es.submit(new Runnable() {
+			
+			public void run() {
+				try{
+					player.stop();
+					fam.stop();
+					dao.shutdown();
+					server.stop();
+				}catch(Exception e){
+					log.warn("Exception shutting down server");
+				}
+				System.exit(0);
+			}
+		});
 	}
 
 	public BasicPlayer getPlayer() {
