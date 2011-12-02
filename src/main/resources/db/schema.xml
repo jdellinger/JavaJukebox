@@ -9,15 +9,15 @@
             autoIncrement="true"/>
     <column name="title"
             type="VARCHAR"
-            size="100"
+            size="255"
             required="false"/>
     <column name="album"
             type="VARCHAR"
-            size="100"
+            size="255"
             required="false"/>
     <column name="artist"
             type="VARCHAR"
-            size="100"
+            size="255"
             required="false"/>
     <column name="path"
             type="VARCHAR"
@@ -100,7 +100,7 @@
             required="true"/>
     <column name="title"
             type="VARCHAR"
-            size="100"
+            size="255"
             required="true"/>
     <column name="token"
             type="VARCHAR"

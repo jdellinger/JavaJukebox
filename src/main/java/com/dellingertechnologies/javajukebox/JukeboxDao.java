@@ -173,9 +173,9 @@ public class JukeboxDao {
 			String updateSql = "update tracks set title = ?, album = ?, artist = ?, path = ?, checksum = ?, likes = ?, dislikes = ?, plays = ?, skips = ?, lastplayed = ?, explicit = ?, enabled = ?, username = ? where id = ?";
 			getTemplate().update(updateSql,
 					new Object[]{
-						track.getTitle(),
-						track.getAlbum(),
-						track.getArtist(),
+						StringUtils.substring(track.getTitle(), 0, 255),
+						StringUtils.substring(track.getAlbum(), 0, 255),
+						StringUtils.substring(track.getArtist(), 0, 255),
 						track.getPath(),
 						track.getChecksum(),
 						track.getLikes(),
