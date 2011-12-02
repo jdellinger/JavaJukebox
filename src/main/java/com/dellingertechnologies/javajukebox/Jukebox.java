@@ -523,7 +523,7 @@ public class Jukebox implements BasicPlayerListener {
 		}
 	}
 
-	public List<Snippet> getSnippets() {
+	public List<Snippet> getSnippetsQueue() {
 		List<Snippet> snippets = new ArrayList<Snippet>();
 		for(String token : snippetQueue.toArray(new String[]{})){
 			snippets.add(dao.getSnippetByToken(token));
@@ -531,4 +531,7 @@ public class Jukebox implements BasicPlayerListener {
 		return snippets;
 	}
 
+	public List<Snippet> getSnippets() {
+		return dao.getSnippets();
+	}
 }

@@ -8,6 +8,7 @@ public class Snippet {
 	private int trackId;
 	private long startPosition;
 	private long endPosition;
+	private Track track;
 	
 	public String getToken() {
 		return token;
@@ -44,6 +45,12 @@ public class Snippet {
 	}
 	public void setEndPosition(long endPosition) {
 		this.endPosition = endPosition;
+	}
+	public void setTrack(Track track) {
+		this.track = track;
+	}
+	public Track getTrack() {
+		return track;
 	}
 	
 }

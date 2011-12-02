@@ -299,7 +299,17 @@ public class JukeboxDao {
 	}
 
 	public Snippet getSnippetByToken(String token) {
-		return getTemplate().queryForObject("select * from snippets where token = ?", new Object[]{token}, new SnippetRowMapper());
+		Snippet snippet = getTemplate().queryForObject("select * from snippets where token = ?", new Object[]{token}, new SnippetRowMapper());
+		snippet.setTrack(getTrack(snippet.getTrackId()));
+		return snippet;
+	}
+
+	public List<Snippet> getSnippets() {
+		List<Snippet> list = getTemplate().query("select * from snippets", new SnippetRowMapper());
+		for(Snippet s : list){
+			s.setTrack(getTrack(s.getTrackId()));
+		}
+		return list;
 	}
 }
 

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Java Jukebox - Snippets</title>
+		<link type="text/css" href="css/smoothness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />	
+		<script type="text/javascript" src="js/jquery-1.6.1.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+
+				$('#refresh_snippets').click(function(){
+					update();
+				});
+
+				updateAndScheduleUpdate();
+			});
+
+			function updateAndScheduleUpdate(){
+				update();
+				setTimeout(updateAndScheduleUpdate, 3000);
+			}
+
+			function update(){
+				retrieveSnippetQueue();
+				retrieveSnippets();
+			}
+			
+			function retrieveSnippetQueue(){
+				$.ajax({
+					  url: "/service/snippet/queue",
+					  success: function(data){
+						updateSnippetQueue(data);
+					  }
+				});
+			}
+
+			function retrieveSnippets(){
+				$.ajax({
+					  url: "/service/snippet/list",
+					  success: function(data){
+						updateSnippets(data);
+					  }
+				});
+			}
+			
+			function playSnippet(token){
+				$.ajax({
+					  url: "/service/snippet/play?token="+token,
+					  success: function(){
+						  update();
+					  }
+				});
+			}
+			
+			function clearSnippetQueue(){
+				$.ajax({
+					  url: "/service/snippet/clear",
+					  success: function(){
+						  update();
+					  }
+				});
+			}
+
+			function updateSnippetQueue(data){
+				var tbody = $('#snippet_queue tbody');
+				tbody.empty();
+				
+				$.each(data.snippets, function(index, value) {
+					var row = $('<tr/>');
+					row.append('<td>'+value.title+'</td>');
+					tbody.append(row);
+				});
+			}
+
+			function updateSnippets(data){
+				var tbody = $('#snippets tbody');
+				tbody.empty();
+				
+				$.each(data.snippets, function(index, value) {
+					var row = $('<tr/>');
+					row.append('<td>'+value.title+'</td>');
+					row.append('<td>'+value.token+'</td>');
+					row.append('<td>Title: '+value.track.title+'<br>Album: '+value.track.album+'<br>Artist: '+value.track.artist+'</td>');
+					row.append("<td><a href='#' onclick=\"playSnippet('" + value.token + "');return false;\">Play</a></td>");
+					tbody.append(row);
+				});
+			}
+
+			
+			function trimToEmpty(s){
+				if(s){
+					return $.trim(s);
+				}else{
+					return '';
+				}
+			}
+			
+		</script>
+		<style type="text/css">
+			/*demo page css*/
+			body{ font: 62.5% "Trebuchet MS", sans-serif; margin: 50px;}
+			#dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
+			#dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
+			ul#icons {margin: 0; padding: 0;}
+			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
+			ul#icons span.ui-icon {float: left; margin: 0 4px;}
+			
+			#ratings { font-weight: bold; clear: both;}
+			#ratinglinks { width: 400px }
+			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
+			#like { width: 0px; padding: 8px 35px; background: #ffffff url(images/happy_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#dislike { width: 0px;  padding: 8px 35px; background: #ffffff url(images/sad_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#explicitImage { width: 56px; height: 40px;  background: #ffffff url(images/explicit.jpg) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			
+			#volumeSlider {width: 100px;}
+			#progressbar {width: 400px;}
+			
+			#snippets {width: 400px;}
+			#snippets th{text-align: left;}
+			#snippet_queue {width: 400px;}
+			#snippet_queue th{text-align: left;}
+			thead th {background-color: #cccccc;}
+			
+			#gravatar {position: relative; float: left; padding-right: 10px;}
+			.red { color: #E41010 }
+			.green { color: #099612 }
+		</style>	
+	</head>
+	<body>
+	<h1>Java Jukebox - Snippets</h1>
+	<a id="refresh_snippets" href="#">Refresh</a>	
+
+
+<hr/>
+	<h2>Snippet Queue</h2>
+	<a href='#' onclick="clearSnippetQueue();return false;">Clear</a>
+	<table id="snippet_queue">
+		<thead>
+			<tr>
+				<th>Title</th>
+			</tr>
+		</thead>
+		<tfoot></tfoot>
+		<tbody></tbody>
+	</table>
+
+<hr/>
+	<h2>Snippets</h2>
+	<table id="snippets">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Token</th>
+				<th>Track</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+		<tfoot></tfoot>
+		<tbody></tbody>
+	</table>
+	
+	</body>
+</html>
+
+

@@ -1,6 +1,5 @@
 package com.dellingertechnologies.javajukebox.services;
 
-import java.io.File;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,10 +17,9 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.dellingertechnologies.javajukebox.Jukebox;
 import com.dellingertechnologies.javajukebox.model.Track;
-import com.dellingertechnologies.javajukebox.model.User;
 
 @Path("/jukebox")
-public class JukeboxResource {
+public class JukeboxResource extends AbstractResource {
 
 	@GET
 	@Path("status")
@@ -44,39 +42,6 @@ public class JukeboxResource {
 		return response;
 	}
 	
-	private JSONObject toJSON(Track track) throws Exception {
-		Jukebox jukebox = Jukebox.getInstance();
-		JSONObject json = new JSONObject();
-		if(track != null){
-			json.put("id", track.getId());
-			json.put("title", track.getTitle());
-			json.put("album", track.getAlbum());
-			json.put("artist", track.getArtist());
-			json.put("likes", track.getLikes());
-			json.put("dislikes", track.getDislikes());
-			json.put("skips", track.getSkips());
-			json.put("plays", track.getPlays());
-			json.put("lastplayed", track.getLastPlayed());
-			json.put("explicit", track.isExplicit());
-
-			String relativePath = new File(track.getPath()).getCanonicalPath();
-			String directoryPath = jukebox.getDirectory().getCanonicalPath()+File.separator;
-			json.put("file", relativePath.replace(directoryPath, ""));
-			
-			json.put("user", toJSON(track.getUser()));
-		}
-		return json;
-	}
-	
-	private JSONObject toJSON(User user) throws Exception {
-		JSONObject json = new JSONObject();
-		if(user != null){
-			json.put("username", user.getUsername());
-			json.put("gravatarId", user.getGravatarId());
-		}
-		return json;
-	}
-
 	@GET
 	@Path("skip")
 	@Produces(MediaType.APPLICATION_JSON)

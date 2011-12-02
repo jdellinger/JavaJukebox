@@ -16,7 +16,7 @@ import com.dellingertechnologies.javajukebox.Jukebox;
 import com.dellingertechnologies.javajukebox.model.Snippet;
 
 @Path("/snippet")
-public class SnippetResource {
+public class SnippetResource extends AbstractResource{
 
 	@GET
 	@Path("play")
@@ -35,6 +35,18 @@ public class SnippetResource {
 	}
 	
 	@GET
+	@Path("queue")
+	@Produces(MediaType.APPLICATION_JSON)
+	public JSONObject listSnippetsQueue() throws Exception{
+		List<Snippet> snippets = Jukebox.getInstance().getSnippetsQueue();
+		JSONArray json = new JSONArray();
+		for(Snippet s : snippets){
+			json.put(toJSON(s));
+		}
+		return new JSONObject().put("snippets", json);
+	}
+
+	@GET
 	@Path("list")
 	@Produces(MediaType.APPLICATION_JSON)
 	public JSONObject listSnippets() throws Exception{
@@ -44,17 +56,6 @@ public class SnippetResource {
 			json.put(toJSON(s));
 		}
 		return new JSONObject().put("snippets", json);
-	}
-
-	private JSONObject toJSON(Snippet s) throws Exception {
-		JSONObject json = new JSONObject();
-		json.put("id", s.getId());
-		json.put("trackId", s.getTrackId());
-		json.put("title", s.getTitle());
-		json.put("token", s.getToken());
-		json.put("startPosition", s.getStartPosition());
-		json.put("endPosition", s.getEndPosition());
-		return json;
 	}
 
 }
