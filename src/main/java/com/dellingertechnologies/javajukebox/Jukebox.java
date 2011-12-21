@@ -195,9 +195,15 @@ public class Jukebox implements BasicPlayerListener {
 			f.get();
 			es.scheduleAtFixedRate(scanner, TRACK_INTERVAL_MINUTES, TRACK_INTERVAL_MINUTES, TimeUnit.MINUTES);
 		}
-		
+		writeIJProperties();
 	}
 	
+	private void writeIJProperties() throws IOException {
+		File file = new File(jukeboxHome+TMP_DIRECTORY, "ij.properties");
+		file.getParentFile().mkdirs();
+		FileUtils.writeStringToFile(file, String.format("ij.database=jdbc:derby://localhost:1527/%s", databaseDirectory.getAbsolutePath()));
+	}
+
 	private void initializeSettings(){
 		log.info("Initializing settings...");
 		dao.addOrUpdateUser(User.DEFAULT);
