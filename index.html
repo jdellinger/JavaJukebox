@@ -1,97 +1,95 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset='utf-8'>
+<html lang='en'>
+	<head>
+		<title>JavaJukebox</title>
+		<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+		<!--[if lt IE 9]><script type='text/javascript' src='assets/javascript/html5.js'></script><![endif]-->
+		<script type='text/javascript' src='assets/javascript/prettify.js'></script>
+		<link rel='stylesheet' type='text/css' href='assets/css/skeleton/stylesheets/base.css' />
+		<link rel='stylesheet' type='text/css' href='assets/css/skeleton/stylesheets/skeleton.css' />
+		<link rel='stylesheet' type='text/css' href='assets/css/prettify.css' />
+		<link rel='stylesheet' type='text/css' href='assets/css/style.css' />
+	</head>
+	
+	<body onload='prettyPrint()'>
+		<div class='container'>
+			<header class='sixteen columns'>
+				<div class='nine columns alpha'>
+					<h1>JavaJukebox</h1>
+					<h2>Shared Server MP3 Player</h2>
+					
+					<p>JavaJukebox is an MP3 server designed to play music files from a central/shared location. While you can certainly use it with a single user music library, it was originally intended to be used in a shared work environment for an agile development team. Multiple users can make their personal MP3 library available so the server can select songs from everyone. There is a web interface to the server to allow access to controls such as pause, play, skip, etc. You can manage the upcoming playlist as well as rate the current playing site (Juke it! or Junk it!). The number of skips and the ratings are incorporated into the algorithm to weight song selection. The server is java based and has been run successfully on Windows and Mac OS.</p>
+				</div>
+				
+				<div class='six columns offset-by-one omega'>
+					<a href='https://github.com/downloads/jdellinger/JavaJukebox/JavaJukebox-1.0-assembly.zip' class='download-button'>
+						Download
+						<span>v1.0 Assembly Zip from GitHub</span>
+					</a>
+				</div>
+			</header>
+			
+			<div class='sixteen columns'>
+				<h3>Usage and Configuration</h3>
+				
+				<div class='eight columns alpha'>
+					<code>
+<pre class='prettyprint'>
+jukebox.bat -p 9999 -d c:/my_music/mp3
+</pre>
+					</code>
+					
+					<h4>Starting Up Jukebox</h4>
+					<p>Staring up the Jukebox is very easy. After extracting the assembly zip file, change to the bin directory. You will find a jukebox script you can use to run the server. There is a windows batch file as well as a shell script. Both scripts should be equivalent, so use the one appropriate for your platform.</p>
+          <p>You can specify a "-p" option to set the port used for the web interface. You can provide a "-d" option to specify the directory where your MP3 files can be found. The server will search recursively in that directory to find music files. If you do not provide these options, the default port is 9999 and the default directory is "music" and will be expected to exist under the jukebox install (sibling to the bin directory). </p>
+				</div>
+				
+				<div class='eight columns omega'>
+					<code>
+<pre class='prettyprint'>
+<b>settings.jbx</b>
+============
+users=default,user1,user2
+default.gravatarId=&lt;some_gravatar_hash&gt;
+user1.gravatarId=&lt;gravatar_hash_for_user1&gt;
+user2.gravatarId=&lt;gravatar_hash_for_user2&gt;
+</pre>
+					</code>
+					
+					<h4>Configuration</h4>
+					<p>In addition to the command line options, you can create a file at the top level of your music folder called settings.jbx. This file can specify the top level folders of shared user libaries. You can also specify a gravatar hash for users as seen above to get a personalized icon on the web interface when a user's song is currently playing or listed on the upcoming list. Any music that does not fall into a defined folder uses "default" and you can set a gravatar hash for that account as well. This is also useful for single user mode where there are not multiple user folders. See <a href="http://www.gravatar.com" target="_blank">http://www.gravatar.com</a> for more info on gravatars.</p>
+				</div>
+			</div>
+			
+			<div class='sixteen columns'>
+				<h3>Web Interface</h3>
+				
+				<p>After you startup your JavaJukebox and the music starts to play, point your favorite browser to the server and port (e.g. http://localhost:9999). You will see the web interface controls here. The behavior should be pretty self explanatory from there on.</p>
+			</div>
 
-  <title>jdellinger/JavaJukebox @ GitHub</title>
-
-  <style type="text/css">
-    body {
-      margin-top: 1.0em;
-      background-color: #7a9feb;
-      font-family: Helvetica, Arial, FreeSans, san-serif;
-      color: #000000;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-    h1 { font-size: 3.8em; color: #856014; margin-bottom: 3px; }
-    h1 .small { font-size: 0.4em; }
-    h1 a { text-decoration: none }
-    h2 { font-size: 1.5em; color: #856014; }
-    h3 { text-align: center; color: #856014; }
-    a { color: #856014; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-    pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-  </style>
-</head>
-
-<body>
-  <a href="https://github.com/jdellinger/JavaJukebox"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
-
-  <div id="container">
-
-    <div class="download">
-      <a href="https://github.com/jdellinger/JavaJukebox/zipball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/zip.png"></a>
-      <a href="https://github.com/jdellinger/JavaJukebox/tarball/master">
-        <img border="0" width="90" src="https://github.com/images/modules/download/tar.png"></a>
-    </div>
-
-    <h1><a href="https://github.com/jdellinger/JavaJukebox">JavaJukebox</a>
-      <span class="small">by <a href="https://github.com/jdellinger">jdellinger</a></span></h1>
-
-    <div class="description">
-      Java based player for mp3 library
-    </div>
-
-    
-
-    
-
-    
-
-    
-
-    
-      <h2>Authors</h2>
-      <p>Jay Dellinger (jay@dellingertechnologies.com)<br/>Justin Labrecque (justin.labrecque@ove.com)<br/>      </p>
-    
-
-    
-      <h2>Contact</h2>
-      <p>Jay Dellinger (jay@dellingertechnologies.com)<br/>      </p>
-    
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="https://github.com/jdellinger/JavaJukebox/zipball/master">zip</a> or
-      <a href="https://github.com/jdellinger/JavaJukebox/tarball/master">tar formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/jdellinger/JavaJukebox</pre>
-    </p>
-
-    <div class="footer">
-      get the source code on GitHub : <a href="https://github.com/jdellinger/JavaJukebox">jdellinger/JavaJukebox</a>
-    </div>
-
-  </div>
-
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-1518306-7");
-pageTracker._trackPageview();
-} catch(err) {}</script>"
-</body>
+			<div class='sixteen columns'>
+				<h3>API Interface and Snippets!</h3>
+				
+				<p>Coming soon!</p>
+			</div>
+		</div>
+		
+		<footer>
+			<div class='container'>
+				<div class='ten columns offset-by-three repo-author'>
+					<img src='http://www.gravatar.com/avatar/976b398afa6ebaf26f5ea69a095aaf52.jpg?d=mm&r=pg&s=100' class='repo-author-logo' />
+					
+					<p>
+						Jay Dellinger is an engineer, software developer, tinkerer and possessor of more hobbies and interests than are possible to list here. I can be reached. 
+					</p>
+				</div>
+				
+				<div class='sixteen columns credits'>
+					<p>GitHub release template built with HTML5, CSS3 and JS by <a href='http://fublo.net'>Fublo</a></p>
+				</div>
+			</div>
+		</footer>
+		
+		<a href='https://github.com/jdellinger/JavaJukebox' target="_blank" class='github-ribbon'><img src='assets/images/github-ribbons/red.png' /></a>
+	</body>
 </html>
