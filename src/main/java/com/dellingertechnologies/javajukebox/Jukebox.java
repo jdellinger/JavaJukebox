@@ -78,8 +78,9 @@ public class Jukebox implements BasicPlayerListener {
 	private FilesystemAlterationMonitor fam;
 	private boolean isPlayingSnippet;
 	public WeightedDBTrackFinder weightedFinder;
-	
-	public static void main(String[] args) throws Exception {
+    private boolean explicitMode;
+
+    public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
 		CommandLine cmd = null;
 		try{
@@ -104,6 +105,7 @@ public class Jukebox implements BasicPlayerListener {
 		this.port = cmd.hasOption('p') ? NumberUtils.toInt(cmd.getOptionValue('p')) : DEFAULT_PORT;
 		this.directory = cmd.hasOption('d') ? new File(cmd.getOptionValue('d')) : new File(jukeboxHome + DEFAULT_DIRECTORY);
 		this.databaseDirectory = cmd.hasOption("db") ? new File(cmd.getOptionValue("db"), "db") : new File(directory, "db");
+        this.explicitMode = cmd.hasOption("x") ? true : false;
 		log.info("Using directory: "+directory);
 
 		fam = new FilesystemAlterationMonitor();
@@ -118,6 +120,7 @@ public class Jukebox implements BasicPlayerListener {
 		options.addOption("p", true, "Port for web server to accept requests");
 		options.addOption("d", true, "Root directory where music files are located");
 		options.addOption("db", true, "Root directory where database directory is located");
+        options.addOption("x", false, "Run in explicit mode to allow explicit tracks to be played");
 		options.addOption("shutdown", false, "Shutdown running server");
 		CommandLineParser parser = new PosixParser();
 		return parser.parse( options, args);
@@ -212,19 +215,19 @@ public class Jukebox implements BasicPlayerListener {
 	public void powerOff() throws Exception {
 		log.info("Jukebox...shutting down");
 		es.submit(new Runnable() {
-			
-			public void run() {
-				try{
-					player.stop();
-					fam.stop();
-					dao.shutdown();
-					server.stop();
-				}catch(Exception e){
-					log.warn("Exception shutting down server");
-				}
-				System.exit(0);
-			}
-		});
+
+            public void run() {
+                try {
+                    player.stop();
+                    fam.stop();
+                    dao.shutdown();
+                    server.stop();
+                } catch (Exception e) {
+                    log.warn("Exception shutting down server");
+                }
+                System.exit(0);
+            }
+        });
 	}
 
 	public BasicPlayer getPlayer() {
@@ -344,10 +347,9 @@ public class Jukebox implements BasicPlayerListener {
 		Track track = null;
 		try {
 			player.stop();
-			track = playFinder.nextTrack();
-			if(track == null){
-				throw new Exception("null track returned");
-			}
+            while(track == null || (track.isExplicit() && !explicitMode)){
+			    track = playFinder.nextTrack();
+            }
 			File trackFile = new File(track.getPath());
 			if(trackFile.exists() && trackFile.canRead()){
 				player.open(trackFile);
@@ -410,7 +412,11 @@ public class Jukebox implements BasicPlayerListener {
 	public File getDirectory() {
 		return directory;
 	}
-	
+
+    public boolean isExplicitMode() {
+        return explicitMode;
+    }
+
 	public void likeCurrentTrack(String remoteAddress){
 		if(canAddRating(remoteAddress)){
 			addToRatingCache(remoteAddress, "LIKE");
@@ -442,6 +448,9 @@ public class Jukebox implements BasicPlayerListener {
 	public void explicitTrack(boolean b) {
 		currentTrack.setExplicit(true);
 		dao.addOrUpdateTrack(currentTrack);
+        if(!explicitMode){
+            skipTrack();
+        }
 	}
 
 	public String getRating(String remoteAddress) {

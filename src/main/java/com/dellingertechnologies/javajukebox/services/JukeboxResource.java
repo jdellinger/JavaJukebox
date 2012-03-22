@@ -40,6 +40,7 @@ public class JukeboxResource {
 		response.put("progress", progress);
 		response.put("rating", Jukebox.getInstance().getRating(request.getRemoteAddr()));
 		response.put("details", jukebox.getCurrentProgress());
+        response.put("explicitMode", jukebox.isExplicitMode());
 		return response;
 	}
 	
