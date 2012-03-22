@@ -71,7 +71,8 @@ public class Jukebox implements BasicPlayerListener {
 	private Map<String,String> ratingHostCache = new HashMap<String,String>();
 	private TrackFinder queueFinder;
 	private MultiTrackFinder playFinder;
-	private ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService es = Executors.newScheduledThreadPool(3);
+
 	private Queue<String> snippetQueue = new LinkedList<String>();
 
 	private Log log = LogFactory.getLog(Jukebox.class);
@@ -79,6 +80,7 @@ public class Jukebox implements BasicPlayerListener {
 	private boolean isPlayingSnippet;
 	public WeightedDBTrackFinder weightedFinder;
     private boolean explicitMode;
+    private PlayMonitor playerMonitor;
 
     public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -107,9 +109,11 @@ public class Jukebox implements BasicPlayerListener {
 		this.databaseDirectory = cmd.hasOption("db") ? new File(cmd.getOptionValue("db"), "db") : new File(directory, "db");
         this.explicitMode = cmd.hasOption("x") ? true : false;
 		log.info("Using directory: "+directory);
+        log.info("Explicit mode: "+explicitMode);
 
 		fam = new FilesystemAlterationMonitor();
-
+        playerMonitor = new PlayMonitor(this);
+        
 		initializeDatabase();
 		initializeJukebox();
 		initializeServer();
@@ -207,6 +211,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void powerOn() throws BasicPlayerException {
 		log.info("Jukebox...powering up");
 		fam.start();
+        es.scheduleAtFixedRate(playerMonitor, 0, 1, TimeUnit.SECONDS);
 		playNextTrack();
 		player.setGain(1.0);
 		this.lastVolume = 1.0;
@@ -253,6 +258,7 @@ public class Jukebox implements BasicPlayerListener {
 	public void progress(int bytesread, long microseconds, byte[] pcmdata,
 			Map properties) {
 		this.currentProgress = properties;
+        playerMonitor.update(bytesread);
 		checkSnippets();
 	}
 
@@ -352,6 +358,7 @@ public class Jukebox implements BasicPlayerListener {
             }
 			File trackFile = new File(track.getPath());
 			if(trackFile.exists() && trackFile.canRead()){
+                playerMonitor.reset();
 				player.open(trackFile);
 				currentTrack = track;
 				clearRatingCache();
