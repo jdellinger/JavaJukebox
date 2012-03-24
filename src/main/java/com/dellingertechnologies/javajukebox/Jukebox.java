@@ -335,7 +335,8 @@ public class Jukebox implements BasicPlayerListener {
 	
 	public boolean resumeTrack() {
 		try{
-			if(player.getStatus() == BasicPlayer.PAUSED && !isPlayingSnippet()){
+			if(player.getStatus() == BasicPlayer.PAUSED && !isPlayingSnippet()){   
+                playerMonitor.reset();
 				player.resume();
 				return true;
 			}
