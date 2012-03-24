@@ -80,7 +80,6 @@ public class Jukebox implements BasicPlayerListener {
 	private boolean isPlayingSnippet;
 	public WeightedDBTrackFinder weightedFinder;
     private boolean explicitMode;
-    private PlayMonitor playerMonitor;
 
     public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -112,8 +111,7 @@ public class Jukebox implements BasicPlayerListener {
         log.info("Explicit mode: "+explicitMode);
 
 		fam = new FilesystemAlterationMonitor();
-        playerMonitor = new PlayMonitor(this);
-        
+
 		initializeDatabase();
 		initializeJukebox();
 		initializeServer();
@@ -217,7 +215,6 @@ public class Jukebox implements BasicPlayerListener {
 	public void powerOn() throws BasicPlayerException {
 		log.info("Jukebox...powering up");
 		fam.start();
-        es.scheduleAtFixedRate(playerMonitor, 0, 1, TimeUnit.SECONDS);
 		playNextTrack();
 		player.setGain(1.0);
 		this.lastVolume = 1.0;
@@ -229,7 +226,7 @@ public class Jukebox implements BasicPlayerListener {
 
             public void run() {
                 try {
-                    player.stop();
+                    stopPlayer(player);
                     fam.stop();
                     dao.shutdown();
                     server.stop();
@@ -264,7 +261,6 @@ public class Jukebox implements BasicPlayerListener {
 	public void progress(int bytesread, long microseconds, byte[] pcmdata,
 			Map properties) {
 		this.currentProgress = properties;
-        playerMonitor.update(bytesread);
 		checkSnippets();
 	}
 
@@ -336,7 +332,6 @@ public class Jukebox implements BasicPlayerListener {
 	public boolean resumeTrack() {
 		try{
 			if(player.getStatus() == BasicPlayer.PAUSED && !isPlayingSnippet()){   
-                playerMonitor.reset();
 				player.resume();
 				return true;
 			}
@@ -358,34 +353,48 @@ public class Jukebox implements BasicPlayerListener {
 	}
 	public boolean playNextTrack() {
 		Track track = null;
-		try {
-			player.stop();
-            while(track == null || (track.isExplicit() && !explicitMode)){
-			    track = playFinder.nextTrack();
+        stopPlayer(player);
+        boolean nextTrackPlaying = false;
+        while (!nextTrackPlaying) {
+            track = playFinder.nextTrack();
+            if (track != null && (!track.isExplicit() || explicitMode)) {
+                File trackFile = new File(track.getPath());
+                if (trackFile.exists() && trackFile.canRead()) {
+                    try {
+                        player.open(trackFile);
+                        currentTrack = track;
+                        clearRatingCache();
+                        player.play();
+                        player.setGain(lastVolume);
+                        currentTrack.incrementPlays();
+                        currentTrack.setLastPlayed(new Date());
+                        dao.addOrUpdateTrack(currentTrack);
+                        nextTrackPlaying = true;
+                    } catch (BasicPlayerException e) {
+                        stopPlayer(player);
+                        disableTrack(track);
+                        log.warn("Exception occurred playing track", e);
+                    }
+                } else {
+                    disableTrack(track);
+                }
             }
-			File trackFile = new File(track.getPath());
-			if(trackFile.exists() && trackFile.canRead()){
-                playerMonitor.reset();
-				player.open(trackFile);
-				currentTrack = track;
-				clearRatingCache();
-				player.play();
-				player.setGain(lastVolume);
-				currentTrack.incrementPlays();
-				currentTrack.setLastPlayed(new Date());
-				dao.addOrUpdateTrack(currentTrack);
-			}else{
-				track.setEnabled(false);
-				dao.addOrUpdateTrack(track);
-			}
-		} catch (Exception e) {
-			try{player.stop();}catch(Exception ex){}
-			log.warn("Exception occurred playing track", e);
-			return playNextTrack();
-		}
-		return true;
+        }
+        return nextTrackPlaying;
 	}
-	
+
+    private void disableTrack(Track track) {
+        track.setEnabled(false);
+        dao.addOrUpdateTrack(track);
+    }
+
+    private void stopPlayer(BasicPlayer player){
+        try{
+            player.stop();
+        }catch(BasicPlayerException bpe){
+            log.warn("Exception stopping player");
+        }
+    }
 	public List<Track> searchTracks(String searchText) {
 		return dao.searchTracks(searchText);
 	}
