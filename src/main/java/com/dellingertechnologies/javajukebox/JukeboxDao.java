@@ -311,6 +311,60 @@ public class JukeboxDao {
 		}
 		return list;
 	}
+
+    public void addOrUpdateSnippet(Snippet snippet) {
+        Snippet existingSnippet = getSnippetById(snippet.getId());
+        if(existingSnippet != null){
+            String updateSql = "update snippets set title = ?, token = ?, track_id = ?, start_position = ?, end_position = ? where id = ?";
+            getTemplate().update(updateSql,
+                    new Object[]{
+                            snippet.getTitle(),
+                            snippet.getToken(),
+                            snippet.getTrackId(),
+                            snippet.getStartPosition(),
+                            snippet.getEndPosition(),
+                            snippet.getId()
+                    },
+                    new int[]{
+                            Types.VARCHAR,
+                            Types.VARCHAR,
+                            Types.NUMERIC,
+                            Types.NUMERIC,
+                            Types.NUMERIC,
+                            Types.NUMERIC
+                    }
+            );
+        }else{
+            String insertSql = "insert into snippets (title, token, track_id, start_position, end_position) values (?, ?, ?, ?, ?)";
+            getTemplate().update(insertSql,
+                    new Object[]{
+                            snippet.getTitle(),
+                            snippet.getToken(),
+                            snippet.getTrackId(),
+                            snippet.getStartPosition(),
+                            snippet.getEndPosition()
+                    },
+                    new int[]{
+                            Types.VARCHAR,
+                            Types.VARCHAR,
+                            Types.NUMERIC,
+                            Types.NUMERIC,
+                            Types.NUMERIC
+                    }
+            );
+        }    }
+
+    private Snippet getSnippetById(int id) {
+        Snippet snippet = null;
+        try{
+            snippet = getTemplate().queryForObject("select * from snippets where id = ?", new Object[]{id}, new SnippetRowMapper());
+            if(snippet != null)
+                snippet.setTrack(getTrack(snippet.getTrackId()));
+        }catch(Exception e){
+            log.warn("Snippet not found");
+        }
+        return snippet;
+    }
 }
 
 class TrackQuery extends MappingSqlQuery<Track> {

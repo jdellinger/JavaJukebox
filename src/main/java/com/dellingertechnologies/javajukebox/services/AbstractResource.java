@@ -2,6 +2,7 @@ package com.dellingertechnologies.javajukebox.services;
 
 import java.io.File;
 
+import com.dellingertechnologies.javajukebox.model.TrackInfo;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.dellingertechnologies.javajukebox.Jukebox;
@@ -59,5 +60,14 @@ public class AbstractResource {
 		json.put("track", toJSON(s.getTrack()));
 		return json;
 	}
+    
+    protected JSONObject toJSON(TrackInfo ti) throws Exception {
+        JSONObject json = new JSONObject();
+        json.put("trackId", ti.getTrackId());
+        json.put("duration", ti.getDuration());
+        json.put("durationDisplay", ti.getDurationDisplay());
+        json.put("bytes", ti.getBytes());
+        return json;
+    }
 
 }

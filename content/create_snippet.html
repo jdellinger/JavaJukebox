@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Java Jukebox - Snippets</title>
+		<link type="text/css" href="css/smoothness/jquery-ui-1.8.13.custom.css" rel="stylesheet" />	
+		<script type="text/javascript" src="js/jquery-1.6.1.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.13.custom.min.js"></script>
+		<script type="text/javascript">
+			$(function(){
+
+                $('#searchButton').click(function(){
+                    search($('#searchText').val());
+                    return false;
+                });
+
+                $('#searchClear').click(function(){
+                    search($('#searchText').val(''));
+                    $('#results').empty();
+                    return false;
+                });
+
+                $('#searchText').keypress(function(e){
+                    if (e.which == 13) {
+                        search($('#searchText').val());
+                        return false;
+                    }
+                });
+
+                $('#test_snippet').click(function(){
+                    testSnippet();
+                    return false;
+                });
+
+                $('#save_snippet').click(function(){
+                    saveSnippet();
+                    return false;
+                });
+
+            });
+
+            function createSlider(min, max){
+                $("#snippet-slider").slider({
+                    range: true,
+                    min: min,
+                    max: max,
+                    values: [ min, max ],
+                    slide: function( event, ui ) {
+                        $( "#snippet-range" ).val( ui.values[ 0 ] + "ms - " + ui.values[ 1 ] +"ms");
+                    }
+                });
+            }
+
+			function trimToEmpty(s){
+				if(s){
+					return $.trim(s);
+				}else{
+					return '';
+				}
+			}
+
+            function search(text) {
+                $.ajax({
+                url: "/service/jukebox/search?text="+text,
+                success: function(data){
+                displayResults(data.results);
+                }
+                });
+            }
+
+            function displayResults(results){
+                $('#results').empty();
+                var tracks = [];
+
+                $.each(results, function(index, value) {
+                    var selectLink = "(<a href='#' onclick='selectTrackForSnippet(" + value.id + ");return false;'>Select</a>)";
+                    tracks.push(buildTrackDisplay(value, selectLink));
+                });
+                $('<ul/>', {
+                    'class': 'upcoming-list',
+                    html: tracks.join('')
+                }).appendTo('#results');
+            }
+
+            function buildTrackDisplay(track, actionLink){
+                var result = [];
+                var title = track.title;
+                var album = track.album ? '('+ track.album +')' : '';
+                if(!title && !album && !track.artist){
+                    title = 'File: ' + track.file;
+                }
+                result.push('<li>');
+                var userTooltip = 'User: '+trimToEmpty(track.user.username);
+                var gimg = "<img id='gravatar' src='http://www.gravatar.com/avatar/"+trimToEmpty(track.user.gravatarId)+".jpg?d=mm&r=pg&s=30' title='"+userTooltip+"' alt='"+userTooltip+"'/>";
+                result.push(gimg.toString());
+                result.push(title + ' ' + album);
+                if(track.artist){
+                    result.push('<br/><i>' + track.artist + '</i>');
+                }
+                if(actionLink){
+                    result.push('<br/>' + actionLink + '</li>');
+                }
+                return result.join('');
+            }
+
+            function selectTrackForSnippet(id) {
+                $.ajax({
+                    url: "/service/snippet/track?id="+id,
+                    success: function(data){
+                        $("#file_chooser").hide();
+                        $("#creator").show();
+                        $("#snippet_track_id").val(id);
+                        $('<ul/>', {
+                            'class': 'upcoming-list',
+                            html: buildTrackDisplay(data.track)
+                        }).appendTo('#trackinfo');
+                        $("#snippet_bytes").val(data.trackInfo.bytes);
+                        var max = data.trackInfo.duration/1000;
+                        createSlider(0,max);
+                    }
+                });
+            }
+
+            function testSnippet(){
+                var id = $("#snippet_track_id").val();
+                var start = translateSliderValue($("#snippet-slider").slider("values", 0));
+                var end = translateSliderValue($("#snippet-slider").slider("values", 1));
+                $.ajax({
+                    url: "/service/snippet/test?id="+id+"&start="+start+"&end="+end,
+                    success: function(data){
+                    }
+                });
+            }
+            function translateSliderValue(val){
+                var duration = val*1000;
+                var max = $("#snippet-slider").slider( "option", "max" )*1000;
+                var bytes = $("#snippet_bytes").val();
+                return parseInt(bytes*(duration*1.0/max));
+            }
+            function saveSnippet(){
+                var id = $("#snippet_track_id").val();
+                var start = translateSliderValue($("#snippet-slider").slider("values", 0));
+                var end = translateSliderValue($("#snippet-slider").slider("values", 1));
+                var name = $("#snippet-name").val();
+                var token = $("#snippet-token").val();
+                $.ajax({
+                    url: "/service/snippet/save?id="+id+"&start="+start+"&end="+end+"&name="+name+"&token="+token,
+                    success: function(data){
+                        window.location.href='snippets.html';
+                    }
+                });
+            }
+
+		</script>
+		<style type="text/css">
+			/*demo page css*/
+			body{ font: 62.5% "Trebuchet MS", sans-serif; margin: 50px;}
+			#dialog_link {padding: .4em 1em .4em 20px;text-decoration: none;position: relative;}
+			#dialog_link span.ui-icon {margin: 0 5px 0 0;position: absolute;left: .2em;top: 50%;margin-top: -8px;}
+			ul#icons {margin: 0; padding: 0;}
+			ul#icons li {margin: 2px; position: relative; padding: 4px 0; cursor: pointer; float: left;  list-style: none;}
+			ul#icons span.ui-icon {float: left; margin: 0 4px;}
+			
+			#ratings { font-weight: bold; clear: both;}
+			#ratinglinks { width: 400px }
+			#ratinglinks div { border: 1px solid #aaaaaa; height: 19px; margin: 2px; position: relative; cursor: pointer; float: left;  list-style: none;}
+			#like { width: 0px; padding: 8px 35px; background: #ffffff url(images/happy_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#dislike { width: 0px;  padding: 8px 35px; background: #ffffff url(images/sad_icon.png) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			#explicitImage { width: 56px; height: 40px;  background: #ffffff url(images/explicit.jpg) no-repeat; background-position: 3px 3px; color: #788BB6; }
+			
+			#volumeSlider {width: 100px;}
+			#progressbar {width: 400px;}
+			
+			#snippets {width: 400px;}
+			#snippets th{text-align: left;}
+			#snippet_queue {width: 400px;}
+			#snippet_queue th{text-align: left;}
+			thead th {background-color: #cccccc;}
+
+            #creator {display:none;}
+
+			#gravatar {position: relative; float: left; padding-right: 10px;}
+			.red { color: #E41010 }
+			.green { color: #099612 }
+		</style>	
+	</head>
+	<body>
+	<h1>Java Jukebox - Snippet Creator</h1>
+
+
+<hr/>
+    <div id="file_chooser">
+        <h2>Choose a File:</h2>
+        <div id="search">
+            <input type="text" id="searchText" />
+            <input type="button" id="searchButton" value="Search" />
+            <input type="button" id="searchClear" value="Clear" />
+        </div>
+        <div id="results"></div>
+    </div>
+    <div id="creator">
+        <h2>Snippetize</h2>
+        <div id="trackinfo"></div>
+        <div>
+            <label for="snippet-name">Snippet Name:</label>
+            <input type="text" id="snippet-name" />
+        </div>
+        <div>
+            <label for="snippet-token">Snippet Token:</label>
+            <input type="text" id="snippet-token" />
+        </div>
+        <p></p>
+        <div id="snippet-slider-range">
+            <label for="snippet-range">Selected Range:</label>
+            <input type="text" id="snippet-range" style="border:0; color:#f6931f; font-weight:bold;" />
+        </div>
+        <div id="snippet-slider"></div>
+        <p></p>
+        <div>
+            <input type="hidden" id="snippet_bytes"/>
+            <input type="hidden" id="snippet_track_id"/>
+            <input type="button" id="test_snippet" value="Test" />
+            <input type="button" id="save_snippet" value="Save" />
+        </div>
+    </div>
+
+<hr/>
+
+	</body>
+</html>
+
+

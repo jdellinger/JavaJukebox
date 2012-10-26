@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.dellingertechnologies.javajukebox.model.TrackInfo;
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayer;
 import javazoom.jlgui.basicplayer.BasicPlayerEvent;
@@ -550,4 +551,32 @@ public class Jukebox implements BasicPlayerListener {
 	public List<Snippet> getSnippets() {
 		return dao.getSnippets();
 	}
+    
+    public Track lookupTrack(int trackId){
+        return dao.getTrack(trackId);
+    }
+    
+    public TrackInfo examineTrack(Track track){
+        return new TrackExaminer(track).getTrackInfo();
+    }
+
+    public boolean playTestSnippet(Snippet snippet) {
+        if (snippet != null) {
+            Track track = dao.getTrack(snippet.getTrackId());
+            if (track != null) {
+                isPlayingSnippet = true;
+                pauseTrack();
+                new SnippetPlayer(snippet, track, lastVolume).play();
+                isPlayingSnippet = false;
+                resumeTrack();
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+    public void saveSnippet(Snippet snippet) {
+        dao.addOrUpdateSnippet(snippet);
+    }
 }
