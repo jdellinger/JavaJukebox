@@ -5,7 +5,7 @@
 	<groupId>com.dellingertechnologies.javajukebox</groupId>
 	<artifactId>JavaJukebox</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0</version>
+	<version>1.0.1</version>
 	<name>JavaJukebox</name>
 
 	<repositories>
@@ -103,7 +103,7 @@
 		<dependency>
 			<groupId>jlgui</groupId>
 			<artifactId>jl</artifactId>
-			<version>1.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>jlgui</groupId>
@@ -123,12 +123,12 @@
 		<dependency>
 			<groupId>jlgui</groupId>
 			<artifactId>mp3spi</artifactId>
-			<version>1.9.4</version>
+			<version>1.9.5</version>
 		</dependency>
 		<dependency>
 			<groupId>jlgui</groupId>
 			<artifactId>tritonus_share</artifactId>
-			<version>1.0</version>
+			<version>1.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>jlgui</groupId>
