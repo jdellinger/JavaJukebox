@@ -55,7 +55,9 @@
 					max: 100,
 					value: 100,
 					change: function(event, ui) {
-						updateVolume(ui.value); 
+            if(event.originalEvent){
+						  updateVolume(ui.value); 
+            }
 					}
 				});
 
